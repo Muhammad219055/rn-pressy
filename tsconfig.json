@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "react-native-btn": ["./src/index"]
+      "rn-pressy": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,

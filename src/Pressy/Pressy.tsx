@@ -1,0 +1,928 @@
+import {
+  useRef,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+} from 'react';
+import {
+  Animated,
+  Pressable,
+  Text,
+  Vibration,
+  Platform,
+  ActivityIndicator,
+  View,
+  StyleSheet,
+  PanResponder,
+  useColorScheme,
+  type GestureResponderEvent,
+  type LayoutChangeEvent,
+} from 'react-native';
+import type { PressyProps, PressyRef, VibrationIntensity } from './types';
+import { usePressyTheme } from './PressyProvider';
+import {
+  getVariantStyles,
+  getShapeStyles,
+  getShadowStyles,
+  getSizeConfig,
+} from './presets';
+import { lightColors, darkColors } from './theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const DEFAULTS = {
+  scaleValue: 0.96,
+  opacityValue: 0.8,
+  animationSpeed: 20,
+  iconSpacing: 8,
+  disabledOpacity: 0.5,
+  delayLongPress: 500,
+  doublePressDelay: 300,
+  swipeThreshold: 0.7,
+  revealTimeout: 3000,
+  pulseSpeed: 1500,
+  pulseIntensity: 1.05,
+  glareSpeed: 2000,
+  glowSpeed: 1500,
+} as const;
+
+const VIBRATION_DURATION = {
+  light: 10,
+  medium: 25,
+  heavy: 50,
+} as const;
+
+type VibrationLevel = keyof typeof VIBRATION_DURATION;
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+const getVibrationDuration = (
+  intensity: VibrationIntensity,
+  customDuration?: number
+): number => {
+  if (customDuration !== undefined) return customDuration;
+  if (typeof intensity === 'boolean') return VIBRATION_DURATION.medium;
+  return (
+    VIBRATION_DURATION[intensity as VibrationLevel] ?? VIBRATION_DURATION.medium
+  );
+};
+
+// ============================================================================
+// Pressy Component
+// ============================================================================
+
+export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
+  const {
+    // Content
+    title,
+    children,
+
+    // Callbacks
+    onPress,
+    onLongPress,
+    delayLongPress = DEFAULTS.delayLongPress,
+    onDoublePress,
+    doublePressDelay = DEFAULTS.doublePressDelay,
+
+    // Presets
+    variant = 'primary',
+    shape = 'rounded',
+    shadow = 'none',
+    size = 'md',
+
+    // Theming
+    themeMode,
+    colors: customColors,
+
+    // Icons
+    icon,
+    iconPosition = 'left',
+    iconSpacing = DEFAULTS.iconSpacing,
+
+    // States
+    disabled = false,
+    disabledOpacity = DEFAULTS.disabledOpacity,
+    isLoading = false,
+    loader,
+    isSuccess = false,
+    isError = false,
+    successConfig,
+    errorConfig,
+
+    // Haptics
+    vibration,
+    vibrationDuration,
+
+    // Animation
+    scaleValue = DEFAULTS.scaleValue,
+    opacityValue = DEFAULTS.opacityValue,
+    animationSpeed = DEFAULTS.animationSpeed,
+
+    // Swipeable
+    swipeable = false,
+    swipeDirection = 'right',
+    swipeContent,
+    onSwipeComplete,
+    swipeThreshold = DEFAULTS.swipeThreshold,
+
+    // Reveal-to-Press
+    revealToPress = false,
+    revealContent,
+    revealTimeout = DEFAULTS.revealTimeout,
+    onReveal,
+
+    // Animation Effects
+    pulse = false,
+    pulseSpeed = DEFAULTS.pulseSpeed,
+    pulseIntensity = DEFAULTS.pulseIntensity,
+    glare = false,
+    glareSpeed = DEFAULTS.glareSpeed,
+    glow = false,
+    glowColor,
+    glowSpeed = DEFAULTS.glowSpeed,
+
+    // Styling
+    style,
+    textStyle,
+
+    ...restProps
+  } = props;
+
+  // ==========================================================================
+  // Theme & Colors
+  // ==========================================================================
+
+  const themeContext = usePressyTheme();
+  const systemColorScheme = useColorScheme();
+
+  const isDark = useMemo(() => {
+    if (themeMode && themeMode !== 'auto') {
+      return themeMode === 'dark';
+    } else if (themeContext) {
+      return themeContext.mode === 'dark';
+    }
+    return systemColorScheme === 'dark';
+  }, [themeMode, themeContext, systemColorScheme]);
+
+  // Merge default colors + custom colors + state-specific colors
+  const resolvedColors = useMemo(() => {
+    const baseColors = isDark ? darkColors : lightColors;
+    let finalColors = customColors
+      ? { ...baseColors, ...customColors }
+      : baseColors;
+
+    if (isSuccess && successConfig?.colors) {
+      finalColors = { ...finalColors, ...successConfig.colors };
+    } else if (isError && errorConfig?.colors) {
+      finalColors = { ...finalColors, ...errorConfig.colors };
+    }
+
+    return finalColors;
+  }, [
+    isDark,
+    customColors,
+    isSuccess,
+    isError,
+    successConfig?.colors,
+    errorConfig?.colors,
+  ]);
+
+  // ==========================================================================
+  // Animation Refs
+  // ==========================================================================
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+  const swipeAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const glareAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0.3)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  // ==========================================================================
+  // State Animation Triggers
+  // ==========================================================================
+
+  // Auto-trigger shake on error
+  useEffect(() => {
+    if (isError && errorConfig?.shake !== false) {
+      Animated.sequence([
+        Animated.timing(shakeAnim, {
+          toValue: 10,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: -10,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: 10,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: -10,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: 0,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [isError, errorConfig?.shake, shakeAnim]);
+
+  // Auto-trigger glare/pulse/glow on success is handled by effective props below
+
+  // ==========================================================================
+  // Effective Props (Active State Overrides)
+  // ==========================================================================
+
+  const effectiveVariant = isSuccess
+    ? successConfig?.variant ?? variant
+    : isError
+    ? errorConfig?.variant ?? variant
+    : variant;
+
+  const effectivePulse =
+    isSuccess && successConfig?.animation === 'pulse' ? true : pulse;
+  const effectiveGlare =
+    isSuccess && successConfig?.animation === 'glare' ? true : glare;
+  const effectiveGlow =
+    isSuccess && successConfig?.animation === 'glow' ? true : glow;
+
+  // ==========================================================================
+  // State
+  // ==========================================================================
+
+  const [buttonWidth, setButtonWidth] = useState(0);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const lastTapRef = useRef(0);
+  const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Determine if button should be interactive
+  const isDisabled = disabled || isLoading;
+
+  // ==========================================================================
+  // Imperative Methods (shake)
+  // ==========================================================================
+
+  useImperativeHandle(ref, () => ({
+    shake: () => {
+      Animated.sequence([
+        Animated.timing(shakeAnim, {
+          toValue: 10,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: -10,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: 10,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: -10,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: 0,
+          duration: 50,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    },
+  }));
+
+  // ==========================================================================
+  // Pulse Animation
+  // ==========================================================================
+
+  useEffect(() => {
+    if (!effectivePulse) {
+      pulseAnim.setValue(1);
+      return;
+    }
+
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: pulseIntensity,
+          duration: pulseSpeed / 2,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: pulseSpeed / 2,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulseAnimation.start();
+    return () => pulseAnimation.stop();
+  }, [effectivePulse, pulseIntensity, pulseSpeed, pulseAnim]);
+
+  // ==========================================================================
+  // Glare Animation
+  // ==========================================================================
+
+  useEffect(() => {
+    if (!effectiveGlare) {
+      glareAnim.setValue(0);
+      return;
+    }
+
+    const glareAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glareAnim, {
+          toValue: 1,
+          duration: glareSpeed,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glareAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    glareAnimation.start();
+    return () => glareAnimation.stop();
+  }, [effectiveGlare, glareSpeed, glareAnim]);
+
+  // ==========================================================================
+  // Glow Animation
+  // ==========================================================================
+
+  useEffect(() => {
+    if (!effectiveGlow) {
+      glowAnim.setValue(0.3);
+      return;
+    }
+
+    const glowAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: glowSpeed / 2,
+          useNativeDriver: false, // shadowOpacity doesn't support native driver
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0.3,
+          duration: glowSpeed / 2,
+          useNativeDriver: false,
+        }),
+      ])
+    );
+
+    glowAnimation.start();
+    return () => glowAnimation.stop();
+  }, [effectiveGlow, glowSpeed, glowAnim]);
+
+  // ==========================================================================
+  // Preset Styles
+  // ==========================================================================
+
+  const sizeConfig = useMemo(() => getSizeConfig(size), [size]);
+
+  const presetStyles = useMemo(() => {
+    const variantStyles = getVariantStyles(effectiveVariant, resolvedColors);
+    const shapeStyles = getShapeStyles(shape, sizeConfig.minHeight);
+    const shadowStyles = getShadowStyles(shadow, isDark);
+
+    return {
+      container: {
+        ...variantStyles.container,
+        ...shapeStyles,
+        ...shadowStyles,
+        paddingVertical: sizeConfig.paddingVertical,
+        paddingHorizontal: sizeConfig.paddingHorizontal,
+        minHeight: sizeConfig.minHeight,
+      },
+      text: {
+        ...variantStyles.text,
+        fontSize: sizeConfig.fontSize,
+      },
+    };
+  }, [effectiveVariant, shape, shadow, sizeConfig, resolvedColors, isDark]);
+
+  // ==========================================================================
+  // Layout
+  // ==========================================================================
+
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    setButtonWidth(event.nativeEvent.layout.width);
+  }, []);
+
+  // ==========================================================================
+  // Press Animation
+  // ==========================================================================
+
+  const handlePressIn = useCallback(() => {
+    if (isDisabled || swipeable) return;
+
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: scaleValue,
+        useNativeDriver: true,
+        speed: animationSpeed,
+        bounciness: 0,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: opacityValue,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [
+    isDisabled,
+    swipeable,
+    scaleAnim,
+    scaleValue,
+    animationSpeed,
+    opacityAnim,
+    opacityValue,
+  ]);
+
+  const handlePressOut = useCallback(() => {
+    if (isDisabled || swipeable) return;
+
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: animationSpeed,
+        bounciness: 0,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [isDisabled, swipeable, scaleAnim, animationSpeed, opacityAnim]);
+
+  // ==========================================================================
+  // Haptic Helper
+  // ==========================================================================
+
+  const triggerHaptic = useCallback(() => {
+    if (!vibration) return;
+    if (Platform.OS === 'android') {
+      Vibration.vibrate(getVibrationDuration(vibration, vibrationDuration));
+    } else {
+      Vibration.vibrate();
+    }
+  }, [vibration, vibrationDuration]);
+
+  // ==========================================================================
+  // Press Handler
+  // ==========================================================================
+
+  const handlePress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (isDisabled) return;
+
+      // Reveal-to-press logic
+      if (revealToPress) {
+        if (!isRevealed) {
+          setIsRevealed(true);
+          onReveal?.();
+
+          if (revealTimeoutRef.current) {
+            clearTimeout(revealTimeoutRef.current);
+          }
+
+          revealTimeoutRef.current = setTimeout(() => {
+            setIsRevealed(false);
+          }, revealTimeout);
+
+          return;
+        } else {
+          setIsRevealed(false);
+          if (revealTimeoutRef.current) {
+            clearTimeout(revealTimeoutRef.current);
+          }
+        }
+      }
+
+      // Double press detection
+      const now = Date.now();
+      if (onDoublePress && now - lastTapRef.current < doublePressDelay) {
+        triggerHaptic();
+        onDoublePress();
+        lastTapRef.current = 0;
+        return;
+      }
+      lastTapRef.current = now;
+
+      // Regular press
+      triggerHaptic();
+      onPress?.(event);
+    },
+    [
+      isDisabled,
+      revealToPress,
+      isRevealed,
+      onReveal,
+      revealTimeout,
+      onDoublePress,
+      doublePressDelay,
+      triggerHaptic,
+      onPress,
+    ]
+  );
+
+  const handleLongPress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (isDisabled) return;
+      triggerHaptic();
+      onLongPress?.(event);
+    },
+    [isDisabled, triggerHaptic, onLongPress]
+  );
+
+  // ==========================================================================
+  // Swipeable Pan Responder
+  // ==========================================================================
+
+  const panResponder = useMemo(() => {
+    if (!swipeable) return null;
+
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {},
+      onPanResponderMove: (_, gestureState) => {
+        const dx = gestureState.dx;
+        const direction = swipeDirection === 'right' ? 1 : -1;
+        const clampedDx = Math.max(0, Math.min(dx * direction, buttonWidth));
+        swipeAnim.setValue(clampedDx);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const dx = gestureState.dx;
+        const direction = swipeDirection === 'right' ? 1 : -1;
+        const progress = (dx * direction) / buttonWidth;
+
+        if (progress >= swipeThreshold) {
+          Animated.timing(swipeAnim, {
+            toValue: buttonWidth,
+            duration: 150,
+            useNativeDriver: true,
+          }).start(() => {
+            triggerHaptic();
+            onSwipeComplete?.();
+            setTimeout(() => {
+              swipeAnim.setValue(0);
+            }, 200);
+          });
+        } else {
+          Animated.spring(swipeAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    });
+  }, [
+    swipeable,
+    swipeDirection,
+    buttonWidth,
+    swipeThreshold,
+    swipeAnim,
+    triggerHaptic,
+    onSwipeComplete,
+  ]);
+
+  // ==========================================================================
+  // Content Rendering
+  // ==========================================================================
+
+  const hasIcon = !!icon;
+  const hasTitle = !!title;
+  const hasChildren = !!children;
+  const needsSpacing = hasIcon && (hasTitle || hasChildren);
+
+  const renderIcon = useMemo(() => {
+    if (!hasIcon) return null;
+
+    const spacingStyle =
+      needsSpacing && iconPosition === 'left'
+        ? { marginRight: iconSpacing }
+        : needsSpacing && iconPosition === 'right'
+        ? { marginLeft: iconSpacing }
+        : null;
+
+    return <View style={spacingStyle}>{icon}</View>;
+  }, [hasIcon, needsSpacing, iconPosition, iconSpacing, icon]);
+
+  const renderContent = useMemo(() => {
+    if (hasTitle) {
+      // Merge config styles
+      const configTextStyle = isSuccess
+        ? successConfig?.textStyle
+        : isError
+        ? errorConfig?.textStyle
+        : undefined;
+
+      return (
+        <Text
+          style={[
+            presetStyles.text,
+            { fontWeight: '600' },
+            textStyle,
+            configTextStyle,
+          ]}
+        >
+          {title}
+        </Text>
+      );
+    }
+    return children;
+  }, [
+    hasTitle,
+    title,
+    presetStyles.text,
+    textStyle,
+    children,
+    isSuccess,
+    isError,
+    successConfig,
+    errorConfig,
+  ]);
+
+  const renderLoader = useMemo(() => {
+    if (!isLoading) return null;
+    return (
+      loader ?? (
+        <ActivityIndicator
+          color={presetStyles.text.color as string}
+          size="small"
+        />
+      )
+    );
+  }, [isLoading, loader, presetStyles.text.color]);
+
+  // Fixed: Reveal content maintains button structure
+  const mainContent = useMemo(() => {
+    if (isLoading) return renderLoader;
+
+    // For reveal-to-press, show reveal content but maintain size
+    if (revealToPress && isRevealed) {
+      return (
+        <View style={styles.revealContentWrapper}>
+          {revealContent ?? (
+            <Text style={[presetStyles.text, { fontWeight: '600' }]}>
+              Confirm?
+            </Text>
+          )}
+        </View>
+      );
+    }
+
+    if (iconPosition === 'right') {
+      return (
+        <>
+          {renderContent}
+          {renderIcon}
+        </>
+      );
+    }
+
+    return (
+      <>
+        {renderIcon}
+        {renderContent}
+      </>
+    );
+  }, [
+    isLoading,
+    renderLoader,
+    revealToPress,
+    isRevealed,
+    revealContent,
+    presetStyles.text,
+    iconPosition,
+    renderContent,
+    renderIcon,
+  ]);
+
+  // ==========================================================================
+  // Glare Overlay
+  // ==========================================================================
+
+  const glareOverlay = useMemo(() => {
+    if (!effectiveGlare) return null;
+
+    const translateX = glareAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-100, buttonWidth + 100],
+    });
+
+    return (
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.glareOverlay,
+          {
+            transform: [{ translateX }, { skewX: '-20deg' }],
+          },
+        ]}
+      />
+    );
+  }, [effectiveGlare, glareAnim, buttonWidth]);
+
+  // ==========================================================================
+  // Glow Styles
+  // ==========================================================================
+
+  const glowStyles = useMemo(() => {
+    if (!effectiveGlow) return {};
+
+    const glowClr = glowColor ?? (resolvedColors.primary as string);
+
+    return {
+      shadowColor: glowClr,
+      shadowOffset: { width: 0, height: 0 },
+      shadowRadius: 15,
+      elevation: 10,
+    };
+  }, [effectiveGlow, glowColor, resolvedColors.primary]);
+
+  // ==========================================================================
+  // Swipeable Rendering
+  // ==========================================================================
+
+  if (swipeable) {
+    const direction = swipeDirection === 'right' ? 1 : -1;
+
+    // Merge config styles for swipeable too
+    const configStyle = isSuccess
+      ? successConfig?.style
+      : isError
+      ? errorConfig?.style
+      : undefined;
+
+    return (
+      <View
+        style={[
+          styles.swipeContainer,
+          presetStyles.container,
+          style,
+          configStyle,
+        ]}
+        onLayout={handleLayout}
+      >
+        {/* Background content - uses primary variant colors */}
+        <View style={[styles.swipeBackground, { backgroundColor: '#22c55e' }]}>
+          {swipeContent ?? (
+            <Text style={{ color: '#fff', fontSize: 20 }}>✓</Text>
+          )}
+        </View>
+
+        {/* Foreground button - uses same variant as button */}
+        <Animated.View
+          style={[
+            styles.swipeForeground,
+            {
+              backgroundColor: resolvedColors.primary,
+              borderRadius: presetStyles.container.borderRadius ?? 12,
+              transform: [
+                { translateX: Animated.multiply(swipeAnim, direction) },
+              ],
+            },
+          ]}
+          {...panResponder?.panHandlers}
+        >
+          <View style={styles.swipeContent}>
+            <Text style={[presetStyles.text, { fontWeight: '600' }, textStyle]}>
+              {title}
+            </Text>
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  // ==========================================================================
+  // Regular Button Rendering
+  // ==========================================================================
+
+  // Combine scale transforms
+  const combinedScale = effectivePulse
+    ? Animated.multiply(scaleAnim, pulseAnim)
+    : scaleAnim;
+
+  // Merge config styles
+  const configStyle = isSuccess
+    ? successConfig?.style
+    : isError
+    ? errorConfig?.style
+    : undefined;
+
+  return (
+    <Animated.View
+      style={[
+        effectiveGlow && glowStyles,
+        effectiveGlow && { shadowOpacity: glowAnim },
+      ]}
+    >
+      <AnimatedPressable
+        onPress={handlePress}
+        onLongPress={onLongPress ? handleLongPress : undefined}
+        delayLongPress={delayLongPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={isDisabled}
+        onLayout={handleLayout}
+        style={[
+          styles.container,
+          presetStyles.container,
+          configStyle, // Apply config styles here
+          {
+            transform: [{ scale: combinedScale }, { translateX: shakeAnim }],
+            opacity: isDisabled
+              ? disabledOpacity
+              : (opacityAnim as unknown as number),
+          },
+          isRevealed && styles.revealed,
+          style,
+        ]}
+        {...restProps}
+      >
+        {mainContent}
+        {glareOverlay}
+      </AnimatedPressable>
+    </Animated.View>
+  );
+});
+
+// Set display name for debugging
+Pressy.displayName = 'Pressy';
+
+// ============================================================================
+// Styles
+// ============================================================================
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  revealed: {
+    borderWidth: 2,
+    borderColor: '#22c55e',
+  },
+  revealContentWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swipeContainer: {
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  swipeBackground: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swipeForeground: {
+    flex: 1,
+  },
+  swipeContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
+  },
+  glareOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+});

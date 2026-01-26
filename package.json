@@ -1,6 +1,6 @@
 {
-  "name": "react-native-btn",
-  "version": "0.1.0",
+  "name": "rn-pressy",
+  "version": "1.0.0",
   "description": "A fun, cross-platform React Native button with customizable styles, haptic feedback, and smooth press effects.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -47,14 +47,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Muhammad219055/react-native-btn.git"
+    "url": "git+https://github.com/Muhammad219055/rn-pressy.git"
   },
   "author": "Muhammad <mki_15@outlook.com> (https://github.com/Muhammad219055)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Muhammad219055/react-native-btn/issues"
+    "url": "https://github.com/Muhammad219055/rn-pressy/issues"
   },
-  "homepage": "https://github.com/Muhammad219055/react-native-btn#readme",
+  "homepage": "https://github.com/Muhammad219055/rn-pressy#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },

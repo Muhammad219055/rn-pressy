@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Btn Example",
-    "slug": "react-native-btn-example",
+    "name": "Pressy Example",
+    "slug": "rn-pressy-example",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "btn.example"
+      "bundleIdentifier": "rn.pressy.example"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "btn.example"
+      "package": "rn.pressy.example"
     },
     "web": {
       "favicon": "./assets/favicon.png"
