@@ -7,12 +7,18 @@ import {
   ScrollView,
   View,
 } from 'react-native';
-import { Pressy, PressyProvider, type PressyRef } from 'rn-pressy';
+import { Pressy, PressyProvider, DDown, Toggy, type PressyRef, type DDownOption } from 'rn-pressy';
 import { Image } from 'react-native';
 import BagIcon from './assets/SVGs/Bag.svg';
 import { useRef, useState } from 'react';
 
 const BagImage = require('./assets/images/bag.png');
+
+// Helper for interactive toggles
+const StatefulToggle = (props: any) => {
+    const [val, setVal] = useState(props.value || false);
+    return <Toggy {...props} value={val} onValueChange={setVal} />;
+};
 
 function ShakeDemo() {
   const shakeRef = useRef<PressyRef>(null);
@@ -410,6 +416,83 @@ function DemoContent() {
       />
 
       <ShakeDemo />
+
+      {/* ================================================================ */}
+      {/* DROPDOWN */}
+      {/* ================================================================ */}
+      <Text style={styles.sectionTitle}>Dropdowns</Text>
+
+      <DDown
+        title="Select a Fruit"
+        options={[
+          { label: 'Apple', value: 'apple', icon: <Text>🍎</Text> },
+          { label: 'Banana', value: 'banana', icon: <Text>🍌</Text> },
+          { label: 'Orange', value: 'orange', icon: <Text>🍊</Text> },
+          { label: 'Grape', value: 'grape', icon: <Text>🍇</Text> },
+        ]}
+        onChange={(val) => console.log('Selected:', val)}
+        variant="outline"
+        style={{ width: '100%' }}
+      />
+
+      <DDown
+        placeholder="Select Multiple Tags"
+        options={[
+            { label: 'React Native', value: 'rn' },
+            { label: 'TypeScript', value: 'ts' },
+            { label: 'JavaScript', value: 'js' },
+            { label: 'Python', value: 'py' },
+            { label: 'Go', value: 'go' },
+        ]}
+        multiSelect
+        searchable
+        searchPlaceholder="Filter tags..."
+        onChange={(vals) => console.log('Tags:', vals)}
+        variant="secondary"
+        style={{ width: '100%' }}
+      />
+
+      {/* ================================================================ */}
+      {/* TOGGLES */}
+      {/* ================================================================ */}
+      <Text style={styles.sectionTitle}>Toggles</Text>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Classic</Text>
+          <StatefulToggle value={false} activeColor="#3b82f6" inactiveColor="#f59e0b"/>
+          <StatefulToggle value={true} activeColor="#3c9865ff" inactiveColor="#c8244aff"/>
+      </View>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Solar</Text>
+          <StatefulToggle value={false} variant="solar" activeColor="#3b82f6" inactiveColor="#f59e0b"/>
+          <StatefulToggle value={true} variant="solar" activeColor="#3c9865ff" inactiveColor="#c8244aff"/>
+      </View>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Slider</Text>
+          <StatefulToggle value={false} variant="slider" activeColor="#3b82f6" inactiveColor="#f59e0b"/>
+          <StatefulToggle value={true} variant="slider" activeColor="#3c9865ff" inactiveColor="#c8244aff"/>
+      </View>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Elastic</Text>
+          <StatefulToggle value={false} variant="elastic" activeColor="#3b82f6" inactiveColor="#f59e0b"/>
+          <StatefulToggle value={true} variant="elastic" activeColor="#3c9865ff" inactiveColor="#c8244aff"/>
+      </View>
+
+      {/* <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Bouncer Fixed</Text>
+          <StatefulToggle value={false} variant="bouncer-fixed" />
+          <StatefulToggle value={true} variant="bouncer-fixed" />
+      </View>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Bouncer Push</Text>
+          <StatefulToggle value={false} variant="bouncer-push" />
+          <StatefulToggle value={true} variant="bouncer-push" />
+      </View> */}
+
     </ScrollView>
   );
 }
@@ -444,5 +527,12 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 8,
     alignSelf: 'flex-start',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingVertical: 8,
   },
 });
