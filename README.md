@@ -1,6 +1,6 @@
 # 🔘 rn-pressy
 
-**The button that feels too good to press.**
+**The button that feels _too good_ to press.**
 
 Sick of boring buttons? Want something that goes _boop_, _swish_, _zap_, and _pop_?
 `rn-pressy` is a haptic-enabled, fully-loaded, slightly-chaotic button library for React Native.
@@ -13,16 +13,9 @@ It scales. It pulses. It glares. It shakes when you mess up. It handles your dar
 
 ---
 
-## 🚀 Why tho?
+## 🚀 Installation
 
-- **Presets Galore**: 5 variants, 4 shapes, 4 sizes. Stop writing `borderRadius: 8` like a peasant.
-- **Gestures**: Long press? Double tap? Swipe to confirm? Reveal secret menus? We got you.
-- **Vibez**: Haptic feedback on everything. Your phone will buzz more than a... nevermind.
-- **Animations**: Pulse, Glare, Glow, and Shake. Make your UI look like a sci-fi movie.
-- **Smart States**: Handles Success (Green + Glare) and Error (Red + Shake) states automatically.
-- **Theming**: Auto light/dark mode detection. It just works.
-
-## 📦 Installation
+Stop stalling. Get the goods.
 
 ```sh
 npm install rn-pressy
@@ -30,81 +23,124 @@ npm install rn-pressy
 yarn add rn-pressy
 ```
 
-## 🎮 The "Basic" Usage
+---
+
+## 📚 The Prop Bible
+
+Everything you can throw at this button. Read it. Memorize it. Be the button.
+
+### 🎨 Content & Presets
+
+| Prop        | Type                                                   | Default   | Vibe Check                                                |
+| :---------- | :----------------------------------------------------- | :-------- | :-------------------------------------------------------- |
+| `title`     | `string`                                               | `-`       | What the button says. Keep it short, don't write a novel. |
+| `children`  | `ReactNode`                                            | `-`       | If you think you're too cool for `title`.                 |
+| `variant`   | `primary`, `secondary`, `tertiary`, `outline`, `ghost` | `primary` | The fit check. Choose your fighter.                       |
+| `shape`     | `rounded`, `pill`, `circle`, `square`                  | `rounded` | Shape up or ship out. `circle` is goated for icons.       |
+| `size`      | `sm`, `md`, `lg`, `xl`                                 | `md`      | Size matters. (Disclaimer: It's for hit slop).            |
+| `shadow`    | `none`, `sm`, `md`, `lg`                               | `none`    | Drop it like it's hot.                                    |
+| `colors`    | `Partial<PressyColors>`                                | `-`       | Override the drip manually.                               |
+| `themeMode` | `light`, `dark`, `auto`                                | `auto`    | Force the mood.                                           |
+
+### ⚡ Actions & Gestures
+
+| Prop               | Type              | Default | Vibe Check                 |
+| :----------------- | :---------------- | :------ | :------------------------- |
+| `onPress`          | `(event) => void` | `-`     | The clicky bit.            |
+| `onLongPress`      | `(event) => void` | `-`     | Hold it... hold it... NOW! |
+| `delayLongPress`   | `number`          | `500`   | How patient are you? (ms)  |
+| `onDoublePress`    | `() => void`      | `-`     | Double tap like Instagram. |
+| `doublePressDelay` | `number`          | `300`   | Speedrun strats.           |
+
+### 🎭 Animations & Effects
+
+| Prop             | Type                                  | Default | Vibe Check                                                    |
+| :--------------- | :------------------------------------ | :------ | :------------------------------------------------------------ |
+| `pulse`          | `boolean`                             | `false` | Heartbeat mode. Use for "Confirm" buttons that are desperate. |
+| `pulseSpeed`     | `number`                              | `1500`  | How fast is its heart racing?                                 |
+| `glare`          | `boolean`                             | `false` | That premium credit card shine. ✨                            |
+| `glow`           | `boolean`                             | `false` | Radioactive aura.                                             |
+| `vibration`      | `boolean`, `light`, `medium`, `heavy` | `-`     | Bzzzt. Haptics make everything better.                        |
+| `animationSpeed` | `number`                              | `20`    | How snappy the press feels. Lower = Snappier.                 |
+
+### ✅ Success & Error States (The Big Brain Stuff)
+
+Stop writing `if (success) { color: green }`. We do that for you.
+
+| Prop            | Type      | Description                                              |
+| :-------------- | :-------- | :------------------------------------------------------- |
+| `isSuccess`     | `boolean` | Keeps it 💯. button turns Green + Glare (configurable).  |
+| `successConfig` | `object`  | Customize the W. `{ animation: 'glare', colors: {...} }` |
+| `isError`       | `boolean` | You messed up. Button turns Red + Shakes (configurable). |
+| `errorConfig`   | `object`  | Customize the L. `{ shake: true, colors: {...} }`        |
+
+### 🕵️ Swipe & Reveal
+
+| Prop              | Type            | Default | Vibe Check                                               |
+| :---------------- | :-------------- | :------ | :------------------------------------------------------- |
+| `revealToPress`   | `boolean`       | `false` | Tap once to see "Are you sure?", tap again to regret it. |
+| `swipeable`       | `boolean`       | `false` | Slide into the DMs (or delete them).                     |
+| `swipeDirection`  | `left`, `right` | `right` | Which way we sliding?                                    |
+| `onSwipeComplete` | `() => void`    | `-`     | Done deal.                                               |
+
+---
+
+## 🎮 Usage Examples
+
+### The "I Just Need a Button"
 
 ```tsx
 import { Pressy } from 'rn-pressy';
 
 <Pressy
-  title="Just Press Me"
+  title="Press Me"
   variant="primary"
-  onPress={() => console.log('Boop!')}
+  onPress={() => console.log('Poggers')}
 />;
 ```
 
-## 🔥 The "I Have Too Much Time" Usage
-
-```tsx
-import { Pressy, PressyProvider } from 'rn-pressy';
-
-<PressyProvider mode="auto">
-  <Pressy
-    title="Danger Zone"
-    variant="outline"
-    color={{ outlineBorder: '#ff0000' }}
-    // Gestures
-    onLongPress={() => console.log('Secret unlocked')}
-    onDoublePress={() => console.log('Double tap!')}
-    // Animations
-    pulse
-    glare
-    // Logic
-    isError={hasError}
-    errorConfig={{ shake: true }} // Wiggle wiggle
-  />
-</PressyProvider>;
-```
-
-## ✨ Features
-
-### 1. Presets (Because CSS is hard)
-
-- **Variants**: `primary`, `secondary`, `tertiary`, `outline`, `ghost`
-- **Shapes**: `rounded`, `pill`, `circle` (perfect for icons), `square`
-- **Sizes**: `sm`, `md`, `lg`, `xl`
-
-### 2. Animations (The fun stuff)
-
-- **Pulse**: Gently throbs to get attention.
-- **Glare**: A premium shine effect that wipes across.
-- **Glow**: Outer shadow glow.
-- **Shake**: Call `ref.current.shake()` when users verify their stupidity.
-
-### 3. Success & Error States
-
-Stop writing conditional styles. Just tell us if it worked.
+### The "Main Character Energy"
 
 ```tsx
 <Pressy
-  title={status === 'success' ? 'Saved!' : 'Save'}
-  isSuccess={status === 'success'}
-  successConfig={{
-    animation: 'glare', // Auto-trigger shine
-    colors: { primary: '#22c55e' },
-  }}
+  title="DELETE PRODUCTION DB"
+  variant="primary"
+  colors={{ primary: '#ff0055' }}
+  // The fun stuff
+  pulse={true}
+  glare={true}
+  vibration="heavy"
+  // Logic
+  isError={submissionFailed}
+  errorConfig={{ shake: true }} // Wiggle of shame
+  onLongPress={() => destroyEverything()}
 />
 ```
 
-### 4. Swipe & Reveal
+### The "Smart Button" (Input Validation)
 
-- **Swipeable**: "Slide to Cancel" style buttons.
-- **Reveal-to-Press**: Tap once to show "Confirm?", tap again to do it.
+```tsx
+const [status, setStatus] = useState('idle');
+
+<Pressy
+  title={
+    status === 'success' ? 'Sent!' : status === 'error' ? 'Retry?' : 'Submit'
+  }
+  isSuccess={status === 'success'}
+  isError={status === 'error'}
+  successConfig={{ animation: 'glare', colors: { primary: '#22c55e' } }}
+  errorConfig={{ shake: true, colors: { primary: '#ef4444' } }}
+  onPress={handleSubmit}
+/>;
+```
+
+---
 
 ## 🤝 Contributing
 
 Found a bug? Want to add a "backflip" animation? PRs welcome.
-Just keep it fun.
+Just keep it fun. No corpo-speak allowed.
 
 ## 📄 License
 
-MIT. Use it for whatever.
+MIT. Go wild.
