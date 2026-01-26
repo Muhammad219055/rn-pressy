@@ -422,6 +422,9 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
       text: {
         ...variantStyles.text,
         fontSize: sizeConfig.fontSize,
+        // Android text centering fixes
+        textAlignVertical: 'center' as 'center',
+        includeFontPadding: false,
       },
     };
   }, [effectiveVariant, shape, shadow, sizeConfig, resolvedColors, isDark]);
@@ -649,7 +652,7 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
         <Text
           style={[
             presetStyles.text,
-            { fontWeight: '600' },
+            { fontWeight: '700' },
             textStyle,
             configTextStyle,
           ]}
@@ -692,7 +695,7 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
       return (
         <View style={styles.revealContentWrapper}>
           {revealContent ?? (
-            <Text style={[presetStyles.text, { fontWeight: '600' }]}>
+            <Text style={[presetStyles.text, { fontWeight: '700' }]}>
               Confirm?
             </Text>
           )}
@@ -815,7 +818,7 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
           {...panResponder?.panHandlers}
         >
           <View style={styles.swipeContent}>
-            <Text style={[presetStyles.text, { fontWeight: '600' }, textStyle]}>
+            <Text style={[presetStyles.text, { fontWeight: '700' }, textStyle]}>
               {title}
             </Text>
           </View>

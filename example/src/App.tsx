@@ -108,6 +108,7 @@ function InteractiveDemo() {
           shake: true,
         }}
         style={{ width: '100%' }}
+        textStyle={{ fontWeight: '700' }}
       />
     </View>
   );
