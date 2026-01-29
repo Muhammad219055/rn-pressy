@@ -1,3 +1,33 @@
+/**
+ * Pressy - Advanced Button Component for React Native
+ * 
+ * A powerful, feature-rich button component with extensive customization options,
+ * beautiful animations, and advanced interactions including:
+ * - Multiple visual variants (primary, secondary, tertiary, outline, ghost)
+ * - Size presets (sm, md, lg, xl)
+ * - Shape options (rounded, pill, circle, square)
+ * - Shadow levels (none, sm, md, lg)
+ * - Loading, success, and error states with animations
+ * - Advanced gestures (long press, double tap, swipe-to-confirm, reveal-to-press)
+ * - Animation effects (pulse, glare, glow, shake)
+ * - Haptic feedback support
+ * - Full theming support with dark mode
+ * - Accessibility compliant
+ * 
+ * @example
+ * ```tsx
+ * <Pressy
+ *   title="Press Me"
+ *   variant="primary"
+ *   size="lg"
+ *   shadow="md"
+ *   onPress={() => console.log('Pressed!')}
+ * />
+ * ```
+ * 
+ * @see {@link ./README.md} for full documentation
+ */
+
 import {
   useRef,
   useMemo,
@@ -482,13 +512,14 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
       container: {
         ...variantStyles.container,
         ...shapeStyles,
-        ...shadowStyles,
+        // Don't include shadow styles here - they'll be applied to outer wrapper
         paddingVertical: sizeConfig.paddingVertical,
         paddingHorizontal: sizeConfig.paddingHorizontal,
         minHeight: sizeConfig.minHeight,
-        // Background color is handled by the dedicated animated layer
-        backgroundColor: 'transparent', 
+        // Don't set backgroundColor here - let the backgroundLayer handle it
+        // This allows style prop to override if needed
       },
+      shadow: shadowStyles, // Separate shadow styles for outer wrapper
       text: {
         ...variantStyles.text,
         fontSize: sizeConfig.fontSize,
@@ -968,7 +999,14 @@ const panResponder = useMemo(() => {
     : undefined;
 
   // Create a separate animated layer for background color to avoid driver mixing issues
-  const backgroundLayer = (
+  // Only render if no custom backgroundColor is provided in style prop
+  const hasCustomBg = useMemo(() => {
+    if (!style) return false;
+    const styleArray = Array.isArray(style) ? style : [style];
+    return styleArray.some((s) => s && typeof s === 'object' && 'backgroundColor' in s);
+  }, [style]);
+
+  const backgroundLayer = !hasCustomBg ? (
     <Animated.View
       style={[
         StyleSheet.absoluteFill,
@@ -978,11 +1016,12 @@ const panResponder = useMemo(() => {
         },
       ]}
     />
-  );
+  ) : null;
 
   return (
     <Animated.View
       style={[
+        presetStyles.shadow, // Apply shadow styles to outer wrapper
         effectiveGlow && glowStyles,
         effectiveGlow && { shadowOpacity: glowAnim },
       ]}
@@ -998,14 +1037,14 @@ const panResponder = useMemo(() => {
         style={[
           styles.container,
           presetStyles.container,
-          configStyle, // Apply config styles here
           {
             transform: [{ scale: combinedScale }, { translateX: shakeAnim }],
             opacity: isDisabled
               ? disabledOpacity
               : (opacityAnim as unknown as number),
           },
-          style,
+          configStyle, // Apply config styles after transforms
+          style, // Apply custom styles last
         ]}
         {...restProps}
       >
