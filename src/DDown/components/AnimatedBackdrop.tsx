@@ -1,10 +1,9 @@
 import React, { useRef, useEffect } from 'react';
-import { Animated, StyleSheet, Platform } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 
 interface AnimatedBackdropProps {
   visible: boolean;
   onPress: () => void;
-  blur?: number;
   opacity?: number;
   color?: string;
   duration?: number;
@@ -14,7 +13,6 @@ interface AnimatedBackdropProps {
 export const AnimatedBackdrop: React.FC<AnimatedBackdropProps> = ({
   visible,
   onPress,
-  blur = 20,
   opacity = 0.4,
   color = 'rgba(0, 0, 0, 1)',
   duration = 200,

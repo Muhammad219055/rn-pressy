@@ -123,38 +123,22 @@ export const useSearch = (
 
 /**
  * Hook for keyboard navigation
+ * Note: Hardware keyboard navigation is not fully implemented in React Native.
+ * This hook is a placeholder for future keyboard event handling.
+ * Consider using a library like react-native-keyevent for full keyboard support.
  */
 export const useKeyboardNavigation = (
-  isOpen: boolean,
-  filteredOptions: DDownOption[],
-  highlightedIndex: number,
-  setHighlightedIndex: (index: number) => void,
-  onSelect: (option: DDownOption) => void,
-  onClose: () => void,
-  enabled: boolean = true
+  _isOpen: boolean,
+  _filteredOptions: DDownOption[],
+  _highlightedIndex: number,
+  _setHighlightedIndex: (index: number) => void,
+  _onSelect: (option: DDownOption) => void,
+  _onClose: () => void,
+  _enabled: boolean = true
 ) => {
-  useEffect(() => {
-    if (!enabled || !isOpen) return;
-
-    const _handleKeyPress = (_event: any) => {
-      // Note: This is a simplified version for React Native
-      // In a real implementation, you'd need to handle hardware keyboard events
-      // or use a library like react-native-keyevent
-      // Keyboard navigation logic would go here
-    };
-
-    return () => {
-      // Cleanup if needed
-    };
-  }, [
-    enabled,
-    isOpen,
-    highlightedIndex,
-    filteredOptions,
-    setHighlightedIndex,
-    onSelect,
-    onClose,
-  ]);
+  // Placeholder for keyboard navigation
+  // In a real implementation, you would handle hardware keyboard events here
+  // using a library like react-native-keyevent or platform-specific event handlers
 };
 
 /**

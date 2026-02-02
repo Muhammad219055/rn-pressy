@@ -829,7 +829,6 @@ export const DDown: React.FC<DDownProps> = (props) => {
           <AnimatedBackdrop
             visible={isOpen}
             onPress={handleClose}
-            blur={backdropBlur}
             opacity={backdropOpacity}
             color={backdropColor || 'rgba(0, 0, 0, 1)'}
             duration={animationDuration}

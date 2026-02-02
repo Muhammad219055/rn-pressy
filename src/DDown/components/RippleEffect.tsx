@@ -38,11 +38,6 @@ export const RippleEffect: React.FC<RippleEffectProps> = ({
     });
   }, [scaleAnim, opacityAnim, duration, onComplete]);
 
-  const _animatedScale = scaleAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, maxRadius],
-  });
-
   return (
     <Animated.View
       style={[

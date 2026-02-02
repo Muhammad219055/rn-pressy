@@ -11724,11 +11724,13 @@ __metadata:
     react: "npm:19.1.0"
     react-native: "npm:0.81.5"
     react-native-builder-bob: "npm:^0.40.13"
+    react-native-svg: "npm:^15.15.1"
     release-it: "npm:^19.0.4"
     typescript: "npm:^5.9.2"
   peerDependencies:
     react: "*"
     react-native: "*"
+    react-native-svg: ">=13.0.0"
   languageName: unknown
   linkType: soft
 

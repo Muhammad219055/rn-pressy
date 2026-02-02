@@ -99,7 +99,7 @@ export const getDisplayText = (
   
   if (multiSelect) {
     if (selectedOptions.length === 1) {
-      return selectedOptions[0].label;
+      return selectedOptions[0]?.label || placeholder;
     }
     if (selectedOptions.length <= maxTagsVisible) {
       return selectedOptions.map(opt => opt.label).join(', ');

@@ -55,13 +55,15 @@ export interface ChexProps {
 
   /**
    * Primary color (checked state)
-   * @default '#1677ff'
+   * Falls back to theme primary color if not provided
+   * @default theme.colors.primary
    */
   primaryColor?: string;
 
   /**
    * Secondary color (background/unchecked)
-   * @default '#fff'
+   * Falls back to theme-aware default (dark: '#1f2937', light: '#fff')
+   * @default theme-aware
    */
   secondaryColor?: string;
 

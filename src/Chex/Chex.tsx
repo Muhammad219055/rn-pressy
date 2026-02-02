@@ -35,8 +35,8 @@ import {
 } from 'react-native';
 import Svg, { Path, Polyline, Rect, Mask } from 'react-native-svg';
 import type { ChexProps } from './types';
+import { usePressyTheme } from '../Pressy/PressyProvider';
 
-const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedPolyline = Animated.createAnimatedComponent(Polyline);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -61,8 +61,8 @@ export const Chex: React.FC<ChexProps> = ({
   variant = 'classic',
   size = 'md',
   disabled = false,
-  primaryColor = '#1677ff',
-  secondaryColor = '#fff',
+  primaryColor,
+  secondaryColor,
   label,
   labelPosition = 'right',
   labelStyle,
@@ -73,6 +73,15 @@ export const Chex: React.FC<ChexProps> = ({
   accessibilityLabel,
   testID,
 }) => {
+  // Theme integration
+  const { theme, mode } = usePressyTheme();
+  const isDark = mode === 'dark';
+
+  // Resolve colors with theme fallbacks
+  const resolvedPrimaryColor = primaryColor || theme.colors.primary;
+  const resolvedSecondaryColor = secondaryColor || (isDark ? '#1f2937' : '#fff');
+  const labelColor = isDark ? '#e5e7eb' : '#333';
+
   // Animation values
   const checkAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -189,11 +198,11 @@ export const Chex: React.FC<ChexProps> = ({
                 width: sizeConfig.box,
                 height: sizeConfig.box,
                 borderRadius: 5,
-                backgroundColor: checked ? primaryColor : secondaryColor,
+                backgroundColor: checked ? resolvedPrimaryColor : resolvedSecondaryColor,
                 borderWidth: checked ? 0 : 1,
-                borderColor: '#d9d9d9',
+                borderColor: isDark ? '#4b5563' : '#d9d9d9',
                 opacity: disabled ? 0.5 : 1,
-                shadowColor: primaryColor,
+                shadowColor: resolvedPrimaryColor,
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: rippleAnim.interpolate({
                   inputRange: [0, 1],
@@ -225,7 +234,7 @@ export const Chex: React.FC<ChexProps> = ({
                   height: 7,
                   borderRightWidth: 2,
                   borderBottomWidth: 2,
-                  borderColor: secondaryColor,
+                  borderColor: resolvedSecondaryColor,
                   transform: [{ rotate: '45deg' }, { translateY: -1 }],
                 }}
               />
@@ -294,6 +303,7 @@ export const Chex: React.FC<ChexProps> = ({
           inputRange: [0, 1],
           outputRange: [66, 42], // Checkmark hidden when unchecked, appears when checked
         });
+        const circleStrokeColor = checked ? resolvedPrimaryColor : (isDark ? '#6b7280' : '#c8ccd4');
         return (
           <View
             style={[
@@ -308,7 +318,7 @@ export const Chex: React.FC<ChexProps> = ({
             <Svg width={sizeConfig.box} height={sizeConfig.box} viewBox="0 0 18 18">
               <AnimatedPath
                 d="M 1 9 L 1 9 c 0 -5 3 -8 8 -8 L 9 1 C 14 1 17 5 17 9 L 17 9 c 0 4 -4 8 -8 8 L 9 17 C 5 17 1 14 1 9 L 1 9 Z"
-                stroke={checked ? primaryColor : '#c8ccd4'}
+                stroke={circleStrokeColor as any}
                 strokeWidth={1.5}
                 fill="none"
                 strokeLinecap="round"
@@ -318,7 +328,7 @@ export const Chex: React.FC<ChexProps> = ({
               />
               <AnimatedPolyline
                 points="1 9 7 14 15 4"
-                stroke={checked ? primaryColor : '#c8ccd4'}
+                stroke={circleStrokeColor as any}
                 strokeWidth={1.5}
                 fill="none"
                 strokeLinecap="round"
@@ -339,6 +349,7 @@ export const Chex: React.FC<ChexProps> = ({
           inputRange: [0, 1],
           outputRange: [172, 0],
         });
+        const svgFillColor = isDark ? 'rgba(75, 85, 99, 0.425)' : 'rgba(207, 205, 205, 0.425)';
         return (
           <View
             style={[
@@ -359,15 +370,15 @@ export const Chex: React.FC<ChexProps> = ({
                 strokeWidth={40}
                 height={200}
                 width={200}
-                fill="rgba(207, 205, 205, 0.425)"
-                stroke={primaryColor}
+                fill={svgFillColor}
+                stroke={resolvedPrimaryColor as any}
                 strokeDasharray={800}
                 strokeDashoffset={boxDashOffset as any}
               />
               <AnimatedPath
                 strokeWidth={15}
                 d="M52 111.018L76.9867 136L149 64"
-                stroke={primaryColor}
+                stroke={resolvedPrimaryColor as any}
                 fill="none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -383,7 +394,8 @@ export const Chex: React.FC<ChexProps> = ({
           inputRange: [0, 1],
           outputRange: [sizeConfig.box / 2, sizeConfig.box * 0.25],
         });
-        const backgroundColor = checked ? primaryColor : '#ccc';
+        const backgroundColor = checked ? resolvedPrimaryColor : (isDark ? '#4b5563' : '#ccc');
+        const checkmarkColor = isDark ? '#1f2937' : '#E0E0E2';
         return (
           <Animated.View
             style={[
@@ -417,7 +429,7 @@ export const Chex: React.FC<ChexProps> = ({
                   height: 7,
                   borderRightWidth: 2,
                   borderBottomWidth: 2,
-                  borderColor: '#E0E0E2',
+                  borderColor: checkmarkColor,
                   transform: [{ rotate: '45deg' }, { translateY: -1 }],
                 }}
               />
@@ -435,9 +447,9 @@ export const Chex: React.FC<ChexProps> = ({
                 width: sizeConfig.box,
                 height: sizeConfig.box,
                 borderRadius: 5,
-                backgroundColor: checked ? primaryColor : secondaryColor,
+                backgroundColor: checked ? resolvedPrimaryColor : resolvedSecondaryColor,
                 borderWidth: checked ? 0 : 1,
-                borderColor: '#d9d9d9',
+                borderColor: isDark ? '#4b5563' : '#d9d9d9',
                 opacity: disabled ? 0.5 : 1,
               },
             ]}
@@ -461,7 +473,7 @@ export const Chex: React.FC<ChexProps> = ({
                   height: 7,
                   borderRightWidth: 2,
                   borderBottomWidth: 2,
-                  borderColor: secondaryColor,
+                  borderColor: resolvedSecondaryColor,
                   transform: [{ rotate: '45deg' }, { translateY: -1 }],
                 }}
               />
@@ -483,6 +495,7 @@ export const Chex: React.FC<ChexProps> = ({
             marginLeft: labelPosition === 'right' ? 10 : 0,
             marginRight: labelPosition === 'left' ? 10 : 0,
             opacity: disabled ? 0.5 : 1,
+            color: labelColor,
           },
           labelStyle,
         ]}
@@ -559,7 +572,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: '500',
-    color: '#333',
   },
 });
 
