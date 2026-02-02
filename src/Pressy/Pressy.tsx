@@ -1,3 +1,33 @@
+/**
+ * Pressy - Advanced Button Component for React Native
+ * 
+ * A powerful, feature-rich button component with extensive customization options,
+ * beautiful animations, and advanced interactions including:
+ * - Multiple visual variants (primary, secondary, tertiary, outline, ghost)
+ * - Size presets (sm, md, lg, xl)
+ * - Shape options (rounded, pill, circle, square)
+ * - Shadow levels (none, sm, md, lg)
+ * - Loading, success, and error states with animations
+ * - Advanced gestures (long press, double tap, swipe-to-confirm, reveal-to-press)
+ * - Animation effects (pulse, glare, glow, shake)
+ * - Haptic feedback support
+ * - Full theming support with dark mode
+ * - Accessibility compliant
+ * 
+ * @example
+ * ```tsx
+ * <Pressy
+ *   title="Press Me"
+ *   variant="primary"
+ *   size="lg"
+ *   shadow="md"
+ *   onPress={() => console.log('Pressed!')}
+ * />
+ * ```
+ * 
+ * @see {@link ./README.md} for full documentation
+ */
+
 import {
   useRef,
   useMemo,
@@ -207,6 +237,8 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
   const glareAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0.3)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  // State interpolation: 0 = Idle, 1 = Success, -1 = Error
+  const stateAnim = useRef(new Animated.Value(0)).current;
 
   // ==========================================================================
   // State Animation Triggers
@@ -251,6 +283,71 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
   // Effective Props (Active State Overrides)
   // ==========================================================================
 
+  // State Background Animation
+  useEffect(() => {
+    let toValue = 0;
+    if (isSuccess) toValue = 1;
+    else if (isError) toValue = -1;
+
+    Animated.timing(stateAnim, {
+      toValue,
+      duration: 300,
+      useNativeDriver: false, // Color interpolation requires false
+    }).start();
+  }, [isSuccess, isError, stateAnim]);
+
+  // Color Interpolation Targets
+  const idleColor = useMemo(() => {
+    const baseColors = isDark ? darkColors : lightColors;
+    const finalColors = customColors
+      ? { ...baseColors, ...customColors }
+      : baseColors;
+    // Get the base variant style WITHOUT state overrides
+    const baseVariant = getVariantStyles(variant, finalColors);
+    return baseVariant.container.backgroundColor as string;
+  }, [isDark, customColors, variant]);
+
+  const successColorVal = useMemo(() => {
+    const baseColors = isDark ? darkColors : lightColors;
+    let finalColors = customColors
+       ? { ...baseColors, ...customColors }
+       : baseColors;
+    
+    if (successConfig?.colors) {
+        finalColors = { ...finalColors, ...successConfig.colors };
+    }
+    // Mix in default success color if not present in variant
+    // Mix in default success color if not present in variant
+    const sVariant = successConfig?.variant ?? variant;
+    // If specific success config colors are provided, they are in finalColors.
+    // We should compute the variant style using the success-merged colors.
+    // NOTE: getVariantStyles uses specific keys like 'primary', 'secondary'. 
+    // Ideally we want the EXACT color that would be rendered.
+    // Simplified: Use the 'success' color from theme if not overridden, 
+    // or if a specific variant is requested, use that.
+    
+    // Actually, let's trust resolvedColors logic but isolate it.
+    // If isSuccess was true, what would resolvedColors be?
+    const sMerged = successConfig?.colors ? { ...finalColors, ...successConfig.colors } : finalColors;
+    return getVariantStyles(sVariant, sMerged).container.backgroundColor as string;
+  }, [isDark, customColors, successConfig, variant]);
+
+  const errorColorVal = useMemo(() => {
+    const baseColors = isDark ? darkColors : lightColors;
+    const finalColors = customColors
+       ? { ...baseColors, ...customColors }
+       : baseColors;
+    
+    const eMerged = errorConfig?.colors ? { ...finalColors, ...errorConfig.colors } : finalColors;
+    const eVariant = errorConfig?.variant ?? variant;
+    return getVariantStyles(eVariant, eMerged).container.backgroundColor as string;
+  }, [isDark, customColors, errorConfig, variant]);
+
+  const animatedBackgroundColor = stateAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [errorColorVal, idleColor, successColorVal],
+  });
+
   const effectiveVariant = isSuccess
     ? successConfig?.variant ?? variant
     : isError
@@ -270,6 +367,7 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
 
   const [buttonWidth, setButtonWidth] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
+  const [isSwipeComplete, setIsSwipeComplete] = useState(false);
   const lastTapRef = useRef(0);
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -414,11 +512,14 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
       container: {
         ...variantStyles.container,
         ...shapeStyles,
-        ...shadowStyles,
+        // Don't include shadow styles here - they'll be applied to outer wrapper
         paddingVertical: sizeConfig.paddingVertical,
         paddingHorizontal: sizeConfig.paddingHorizontal,
         minHeight: sizeConfig.minHeight,
+        // Don't set backgroundColor here - let the backgroundLayer handle it
+        // This allows style prop to override if needed
       },
+      shadow: shadowStyles, // Separate shadow styles for outer wrapper
       text: {
         ...variantStyles.text,
         fontSize: sizeConfig.fontSize,
@@ -569,40 +670,72 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
   // Swipeable Pan Responder
   // ==========================================================================
 
-  const panResponder = useMemo(() => {
+const panResponder = useMemo(() => {
     if (!swipeable) return null;
 
     return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {},
+      onPanResponderGrant: () => {
+
+        if (vibration && Platform.OS !== 'web') {
+          Vibration.vibrate(10);
+        }
+      },
       onPanResponderMove: (_, gestureState) => {
         const dx = gestureState.dx;
         const direction = swipeDirection === 'right' ? 1 : -1;
-        const clampedDx = Math.max(0, Math.min(dx * direction, buttonWidth));
-        swipeAnim.setValue(clampedDx);
+        const thumbWidth = sizeConfig.minHeight;
+        const maxDrag = Math.max(0, buttonWidth - thumbWidth);
+        
+        // Calculate drag with direction
+        let clampedDx = dx * direction;
+        
+        if (clampedDx < 0) {
+          // Resistance when dragging before start
+          clampedDx = clampedDx * 0.2;
+        } else if (clampedDx > maxDrag) {
+          // Resistance when dragging past end
+          const overflow = clampedDx - maxDrag;
+          clampedDx = maxDrag + (overflow * 0.2);
+        }
+        
+        swipeAnim.setValue(Math.max(0, clampedDx));
       },
       onPanResponderRelease: (_, gestureState) => {
         const dx = gestureState.dx;
+        const vx = gestureState.vx; // Velocity for momentum-based threshold
         const direction = swipeDirection === 'right' ? 1 : -1;
-        const progress = (dx * direction) / buttonWidth;
+        const thumbWidth = sizeConfig.minHeight;
+        const maxDrag = Math.max(0, buttonWidth - thumbWidth);
+        const currentValue = (swipeAnim as any)._value;
+        const clampedValue = Math.max(0, Math.min(currentValue, maxDrag));
+        const progress = maxDrag > 0 ? clampedValue / maxDrag : 0;
 
-        if (progress >= swipeThreshold) {
-          Animated.timing(swipeAnim, {
-            toValue: buttonWidth,
-            duration: 150,
+        // Consider velocity for more natural feel
+        const hasVelocity = Math.abs(vx) > 0.5;
+        const velocityBoost = hasVelocity && vx * direction > 0 ? 0.15 : 0;
+        const effectiveProgress = Math.min(1, progress + velocityBoost);
+
+        if (effectiveProgress >= swipeThreshold) {
+          // Complete the swipe with smooth animation
+          Animated.spring(swipeAnim, {
+            toValue: maxDrag,
             useNativeDriver: true,
+            tension: 80,
+            friction: 10,
           }).start(() => {
+            setIsSwipeComplete(true);
             triggerHaptic();
             onSwipeComplete?.();
-            setTimeout(() => {
-              swipeAnim.setValue(0);
-            }, 200);
           });
         } else {
+          // Snap back with elastic bounce
           Animated.spring(swipeAnim, {
             toValue: 0,
             useNativeDriver: true,
+            tension: 100,
+            friction: 8,
           }).start();
         }
       },
@@ -615,6 +748,8 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
     swipeAnim,
     triggerHaptic,
     onSwipeComplete,
+    sizeConfig.minHeight,
+    vibration,
   ]);
 
   // ==========================================================================
@@ -786,6 +921,8 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
       ? errorConfig?.style
       : undefined;
 
+    const thumbWidth = sizeConfig.minHeight; // Thumb is square based on height
+
     return (
       <View
         style={[
@@ -793,22 +930,39 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
           presetStyles.container,
           style,
           configStyle,
+          { paddingHorizontal: 0, paddingVertical: 0 } // Reset padding for track
         ]}
         onLayout={handleLayout}
       >
-        {/* Background content - uses primary variant colors */}
-        <View style={[styles.swipeBackground, { backgroundColor: '#22c55e' }]}>
-          {swipeContent ?? (
-            <Text style={{ color: '#fff', fontSize: 20 }}>✓</Text>
-          )}
+        {/* Track Content (Text "Swipe to Confirm") */}
+        <View style={styles.swipeTrackTextWrapper}>
+          <Text style={[presetStyles.text, { fontWeight: '700', opacity: 0.8 }, textStyle]}>
+            {title}
+          </Text>
         </View>
 
-        {/* Foreground button - uses same variant as button */}
+        {/* Success / Background Reveal Layer (Optional, e.g. Green reveal) */}
+        <Animated.View 
+            style={[
+                styles.swipeBackground, 
+                { 
+                    backgroundColor: '#22c55e', 
+                    opacity: swipeAnim.interpolate({
+                        inputRange: [0, Math.max(1, buttonWidth - thumbWidth)],
+                        outputRange: [0, 1]
+                    })
+                }
+            ]} 
+        />
+
+        {/* Thumb / Handle */}
         <Animated.View
           style={[
-            styles.swipeForeground,
+            styles.swipeThumb,
             {
-              backgroundColor: resolvedColors.primary,
+              width: thumbWidth,
+              height: '100%', // Full height of container
+              backgroundColor: resolvedColors.primary, // Thumb color
               borderRadius: presetStyles.container.borderRadius ?? 12,
               transform: [
                 { translateX: Animated.multiply(swipeAnim, direction) },
@@ -817,11 +971,12 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
           ]}
           {...panResponder?.panHandlers}
         >
-          <View style={styles.swipeContent}>
-            <Text style={[presetStyles.text, { fontWeight: '700' }, textStyle]}>
-              {title}
-            </Text>
-          </View>
+            {/* Optional Icon in Thumb (like an arrow) */}
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: resolvedColors.primaryText, fontSize: 18, fontWeight: 'bold' }}>
+                    {direction === 1 ? '→' : '←'}
+                </Text>
+            </View>
         </Animated.View>
       </View>
     );
@@ -843,9 +998,30 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
     ? errorConfig?.style
     : undefined;
 
+  // Create a separate animated layer for background color to avoid driver mixing issues
+  // Only render if no custom backgroundColor is provided in style prop
+  const hasCustomBg = useMemo(() => {
+    if (!style) return false;
+    const styleArray = Array.isArray(style) ? style : [style];
+    return styleArray.some((s) => s && typeof s === 'object' && 'backgroundColor' in s);
+  }, [style]);
+
+  const backgroundLayer = !hasCustomBg ? (
+    <Animated.View
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          backgroundColor: animatedBackgroundColor,
+          borderRadius: presetStyles.container.borderRadius ?? 12,
+        },
+      ]}
+    />
+  ) : null;
+
   return (
     <Animated.View
       style={[
+        presetStyles.shadow, // Apply shadow styles to outer wrapper
         effectiveGlow && glowStyles,
         effectiveGlow && { shadowOpacity: glowAnim },
       ]}
@@ -861,18 +1037,18 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
         style={[
           styles.container,
           presetStyles.container,
-          configStyle, // Apply config styles here
           {
             transform: [{ scale: combinedScale }, { translateX: shakeAnim }],
             opacity: isDisabled
               ? disabledOpacity
               : (opacityAnim as unknown as number),
           },
-          isRevealed && styles.revealed,
-          style,
+          configStyle, // Apply config styles after transforms
+          style, // Apply custom styles last
         ]}
         {...restProps}
       >
+        {backgroundLayer}
         {mainContent}
         {glareOverlay}
       </AnimatedPressable>
@@ -906,20 +1082,27 @@ const styles = StyleSheet.create({
   swipeContainer: {
     overflow: 'hidden',
     position: 'relative',
+    justifyContent: 'center', // Center track content vertically
   },
   swipeBackground: {
     ...StyleSheet.absoluteFillObject,
+  },
+  swipeTrackTextWrapper: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 0,
   },
-  swipeForeground: {
-    flex: 1,
-  },
-  swipeContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 14,
+  swipeThumb: {
+    position: 'absolute',
+    top: 0,
+    left: 0, // Start at left
+    zIndex: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
   glareOverlay: {
     position: 'absolute',

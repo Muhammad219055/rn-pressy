@@ -7,12 +7,66 @@ import {
   ScrollView,
   View,
 } from 'react-native';
-import { Pressy, PressyProvider, type PressyRef } from 'rn-pressy';
+import { Pressy, PressyProvider, DDown, Toggy, Chex, Inpy, type PressyRef } from 'rn-pressy';
 import { Image } from 'react-native';
 import BagIcon from './assets/SVGs/Bag.svg';
 import { useRef, useState } from 'react';
 
 const BagImage = require('./assets/images/bag.png');
+
+// Helper for interactive toggles
+const StatefulToggle = (props: any) => {
+    const [val, setVal] = useState(props.value || false);
+    return <Toggy {...props} value={val} onValueChange={setVal} />;
+};
+
+// Helper for interactive checkboxes
+const ChexDemo = (props: { label: string; variant: 'classic' | 'circle' | 'bounce' | 'glow' | 'fill' | 'stamp' | 'tick' | 'bubble' }) => {
+    const [checked, setChecked] = useState(false);
+    return <Chex checked={checked} onValueChange={setChecked} label={props.label} variant={props.variant} />;
+};
+
+// Helper for text input demos
+const InpyDemo = () => {
+    const [text1, setText1] = useState('');
+    const [text2, setText2] = useState('');
+    const [text3, setText3] = useState('');
+    const [text4, setText4] = useState('');
+    
+    return (
+        <View style={{ gap: 16, width: '100%' }}>
+            <Inpy 
+                shape='square'
+                value={text1} 
+                onChangeText={setText1} 
+                label="Outlined (default)"
+                variant="outlined"
+                clearable
+
+            />
+            <Inpy 
+                value={text2} 
+                onChangeText={setText2} 
+                label="Filled variant"
+                variant="filled"
+                clearable
+            />
+            <Inpy 
+                value={text3} 
+                onChangeText={setText3} 
+                label="Underlined variant"
+                variant="underlined"
+            />
+            <Inpy 
+                value={text4} 
+                onChangeText={setText4} 
+                error="This field has an error"
+                label="Error state"
+                variant="outlined"
+            />
+        </View>
+    );
+};
 
 function ShakeDemo() {
   const shakeRef = useRef<PressyRef>(null);
@@ -117,7 +171,7 @@ function InteractiveDemo() {
 function DemoContent() {
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <InteractiveDemo />
+      {/* <InteractiveDemo /> */}
 
       {/* ================================================================ */}
       {/* VARIANTS */}
@@ -190,25 +244,25 @@ function DemoContent() {
       <Pressy
         title="No Shadow"
         shadow="none"
-        variant="tertiary"
+        variant="primary"
         onPress={() => {}}
       />
       <Pressy
         title="Small Shadow"
-        shadow="sm"
-        variant="tertiary"
+        shadow="lg"
+        variant="primary"
         onPress={() => {}}
       />
       <Pressy
         title="Medium Shadow"
-        shadow="md"
-        variant="tertiary"
+        shadow="none"
+        variant="primary"
         onPress={() => {}}
       />
       <Pressy
         title="Large Shadow"
-        shadow="lg"
-        variant="tertiary"
+        shadow="none"
+        variant="primary"
         onPress={() => {}}
       />
 
@@ -410,6 +464,115 @@ function DemoContent() {
       />
 
       <ShakeDemo />
+
+      {/* ================================================================ */}
+      {/* DROPDOWN */}
+      {/* ================================================================ */}
+      <Text style={styles.sectionTitle}>Dropdowns</Text>
+
+      <DDown
+        title="Select a Fruit"
+        options={[
+          { label: 'Apple', value: 'apple', icon: <Text>🍎</Text> },
+          { label: 'Banana', value: 'banana', icon: <Text>🍌</Text> },
+          { label: 'Orange', value: 'orange', icon: <Text>🍊</Text> },
+          { label: 'Grape', value: 'grape', icon: <Text>🍇</Text> },
+        ]}
+        onChange={(val) => console.log('Selected:', val)}
+        variant="outlined"
+        style={{ width: '100%' }}
+      />
+
+      <DDown
+        placeholder="Select Multiple Tags"
+        options={[
+            { label: 'React Native', value: 'rn' },
+            { label: 'TypeScript', value: 'ts' },
+            { label: 'JavaScript', value: 'js' },
+            { label: 'Python', value: 'py' },
+            { label: 'Go', value: 'go' },
+        ]}
+        multiSelect
+        searchable
+        searchPlaceholder="Filter tags..."
+        onChange={(vals) => console.log('Tags:', vals)}
+        variant="filled"
+        style={{ width: '100%' }}
+      />
+
+      {/* ================================================================ */}
+      {/* TOGGLES */}
+      {/* ================================================================ */}
+      <Text style={styles.sectionTitle}>Toggles</Text>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Classic</Text>
+          <StatefulToggle value={false} activeColor="#3b82f6" inactiveColor="#f59e0b"/>
+          <StatefulToggle value={true} activeColor="#3c9865ff" inactiveColor="#c8244aff"/>
+      </View>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Solar</Text>
+          <StatefulToggle value={false} variant="solar" activeColor="#3b82f6" inactiveColor="#f59e0b"/>
+          <StatefulToggle value={true} variant="solar" activeColor="#3c9865ff" inactiveColor="#c8244aff"/>
+      </View>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Slider</Text>
+          <StatefulToggle value={false} variant="slider" activeColor="#3b82f6" inactiveColor="#f59e0b"/>
+          <StatefulToggle value={true} variant="slider" activeColor="#3c9865ff" inactiveColor="#c8244aff"/>
+      </View>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Elastic</Text>
+          <StatefulToggle value={false} variant="elastic" activeColor="#3b82f6" inactiveColor="#f59e0b"/>
+          <StatefulToggle value={true} variant="elastic" activeColor="#3c9865ff" inactiveColor="#c8244aff"/>
+      </View>
+
+      {/* <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Bouncer Fixed</Text>
+          <StatefulToggle value={false} variant="bouncer-fixed" />
+          <StatefulToggle value={true} variant="bouncer-fixed" />
+      </View>
+
+      <View style={styles.row}>
+          <Text style={{ color: '#fff', width: 80 }}>Bouncer Push</Text>
+          <StatefulToggle value={false} variant="bouncer-push" />
+          <StatefulToggle value={true} variant="bouncer-push" />
+      </View> */}
+
+      {/* ================================================================ */}
+      {/* CHECKBOXES */}
+      {/* ================================================================ */}
+      <Text style={styles.sectionTitle}>Checkboxes</Text>
+
+      <View style={styles.row}>
+        <ChexDemo label="Classic" variant="classic" />
+        <ChexDemo label="Circle" variant="circle" />
+        <ChexDemo label="Bounce" variant="bounce" />
+        <ChexDemo label="Glow" variant="glow" />
+      </View>
+
+      <View style={styles.row}>
+        <ChexDemo label="Fill" variant="fill" />
+        <ChexDemo label="Stamp" variant="stamp" />
+        <ChexDemo label="Tick" variant="tick" />
+        <ChexDemo label="Bubble" variant="bubble" />
+      </View>
+
+      <View style={styles.row}>
+        <Chex checked={true} onValueChange={() => {}} label="Checked" variant="glow" />
+        <Chex checked={false} onValueChange={() => {}} indeterminate label="Indeterminate" />
+        <Chex checked={false} onValueChange={() => {}} disabled label="Disabled" />
+      </View>
+
+      {/* ================================================================ */}
+      {/* TEXT INPUTS */}
+      {/* ================================================================ */}
+      <Text style={styles.sectionTitle}>Text Inputs</Text>
+
+      <InpyDemo />
+
     </ScrollView>
   );
 }
@@ -427,7 +590,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f9f9f9ff',
   },
   content: {
     alignItems: 'center',
@@ -444,5 +607,12 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 8,
     alignSelf: 'flex-start',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingVertical: 8,
   },
 });

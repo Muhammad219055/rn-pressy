@@ -115,36 +115,43 @@ export const getShadowStyles = (
   shadow: Shadow,
   isDark: boolean = false
 ): ViewStyle => {
-  // Use lighter shadow color for dark mode for visibility
   const shadowColor = isDark ? '#fff' : '#000';
-  const baseOpacity = isDark ? 0.3 : 1;
-
   switch (shadow) {
     case 'none':
       return {};
     case 'sm':
       return {
         shadowColor,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1 * baseOpacity,
-        shadowRadius: 2,
-        elevation: 2,
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 3,
       };
     case 'md':
       return {
-        shadowColor,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15 * baseOpacity,
-        shadowRadius: 4,
-        elevation: 4,
+          shadowColor,
+          shadowOffset: {
+            width: 0,
+            height: 4,
+          },
+          shadowOpacity: 0.25,
+          shadowRadius: 8,
+          elevation: 8,
+
       };
     case 'lg':
       return {
         shadowColor,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2 * baseOpacity,
-        shadowRadius: 8,
-        elevation: 8,
+        shadowOffset: {
+          width: 0,
+          height: 8,
+        },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+        elevation: 16,
       };
     default:
       return {};
