@@ -13,7 +13,8 @@ export type Variant =
   | 'secondary'
   | 'tertiary'
   | 'outline'
-  | 'ghost';
+  | 'ghost'
+  | '3d';
 
 /**
  * Get styles for a variant
@@ -51,6 +52,11 @@ export const getVariantStyles = (
       return {
         container: { backgroundColor: colors.ghost },
         text: { color: colors.ghostText },
+      };
+    case '3d':
+      return {
+        container: { backgroundColor: colors.primary },
+        text: { color: colors.primaryText },
       };
     default:
       return {

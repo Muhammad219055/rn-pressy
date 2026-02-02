@@ -21,7 +21,7 @@ const StatefulToggle = (props: any) => {
 };
 
 // Helper for interactive checkboxes
-const ChexDemo = (props: { label: string; variant: 'classic' | 'circle' | 'bounce' | 'glow' | 'fill' | 'stamp' | 'tick' | 'bubble' }) => {
+const ChexDemo = (props: { label: string; variant: 'classic' | 'ripple' | 'flip' | 'circle-path' | 'svg-stroke' | 'morph' }) => {
     const [checked, setChecked] = useState(false);
     return <Chex checked={checked} onValueChange={setChecked} label={props.label} variant={props.variant} />;
 };
@@ -206,6 +206,12 @@ function DemoContent() {
         title="Ghost"
         variant="ghost"
         onPress={() => Alert.alert('Ghost!')}
+      />
+
+      <Pressy
+        title="ddd Button"
+        variant="3d"
+        onPress={() => Alert.alert('3D!')}
       />
 
       {/* ================================================================ */}
@@ -548,22 +554,24 @@ function DemoContent() {
 
       <View style={styles.row}>
         <ChexDemo label="Classic" variant="classic" />
-        <ChexDemo label="Circle" variant="circle" />
-        <ChexDemo label="Bounce" variant="bounce" />
-        <ChexDemo label="Glow" variant="glow" />
+        <ChexDemo label="Ripple" variant="ripple" />
+        <ChexDemo label="Flip" variant="flip" />
       </View>
 
       <View style={styles.row}>
-        <ChexDemo label="Fill" variant="fill" />
-        <ChexDemo label="Stamp" variant="stamp" />
-        <ChexDemo label="Tick" variant="tick" />
-        <ChexDemo label="Bubble" variant="bubble" />
+        <ChexDemo label="Circle Path" variant="circle-path" />
+        <ChexDemo label="SVG Stroke" variant="svg-stroke" />
+        <ChexDemo label="Morph" variant="morph" />
       </View>
 
       <View style={styles.row}>
-        <Chex checked={true} onValueChange={() => {}} label="Checked" variant="glow" />
-        <Chex checked={false} onValueChange={() => {}} indeterminate label="Indeterminate" />
+        <Chex checked={true} onValueChange={() => {}} label="Checked" variant="ripple" />
         <Chex checked={false} onValueChange={() => {}} disabled label="Disabled" />
+      </View>
+
+      <View style={styles.row}>
+        <Chex checked={true} onValueChange={() => {}} label="Custom Pink" variant="morph" primaryColor="#ec4899" />
+        <Chex checked={true} onValueChange={() => {}} label="Custom Green" variant="ripple" primaryColor="#22c55e" />
       </View>
 
       {/* ================================================================ */}

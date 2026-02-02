@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Animated, StyleSheet, View, Platform } from 'react-native';
+import { Animated, StyleSheet, Platform } from 'react-native';
 
 interface AnimatedBackdropProps {
   visible: boolean;
@@ -64,9 +64,6 @@ export const AnimatedBackdrop: React.FC<AnimatedBackdropProps> = ({
           opacity: opacityAnim,
           backgroundColor: color,
           zIndex: 1, // Ensure backdrop is below everything else
-        },
-        Platform.OS === 'ios' && blur > 0 && {
-          backdropFilter: `blur(${blur}px)`,
         },
       ]}
     >

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Animated, View, StyleSheet } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 
 interface RippleEffectProps {
   x: number;
@@ -38,7 +38,7 @@ export const RippleEffect: React.FC<RippleEffectProps> = ({
     });
   }, [scaleAnim, opacityAnim, duration, onComplete]);
 
-  const animatedScale = scaleAnim.interpolate({
+  const _animatedScale = scaleAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, maxRadius],
   });

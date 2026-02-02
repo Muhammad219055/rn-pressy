@@ -1,27 +1,25 @@
-import type { ViewStyle, TextStyle, ColorValue } from 'react-native';
+import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 
 /**
- * Chex variant styles
- * - classic: Traditional rounded square checkbox
- * - circle: Circular checkbox
- * - bounce: Bouncy spring animation
- * - glow: Glowing effect when checked
- * - fill: Fills from center outward
- * - stamp: Stamped checkmark effect
- * - tick: Animated tick drawing
- * - bubble: Bubble pop effect
+ * Checkbox variants
  */
-export type ChexVariant = 'classic' | 'circle' | 'bounce' | 'glow' | 'fill' | 'stamp' | 'tick' | 'bubble';
+export type ChexVariant =
+  | 'classic'
+  | 'ripple'
+  | 'flip'
+  | 'circle-path'
+  | 'svg-stroke'
+  | 'morph';
 
 /**
- * Chex size options
+ * Checkbox size presets
  */
 export type ChexSize = 'sm' | 'md' | 'lg';
 
 /**
- * Vibration intensity options
+ * Label position relative to checkbox
  */
-export type VibrationIntensity = boolean | 'light' | 'medium' | 'heavy';
+export type LabelPosition = 'left' | 'right';
 
 /**
  * Chex component props
@@ -33,27 +31,21 @@ export interface ChexProps {
   checked: boolean;
 
   /**
-   * Callback when value changes
+   * Called when the checkbox state changes
    */
   onValueChange: (checked: boolean) => void;
 
   /**
-   * Visual variant
+   * Visual variant of the checkbox
    * @default 'classic'
    */
   variant?: ChexVariant;
 
   /**
-   * Size of the checkbox
+   * Size preset
    * @default 'md'
    */
   size?: ChexSize;
-
-  /**
-   * Whether the checkbox is in indeterminate state
-   * @default false
-   */
-  indeterminate?: boolean;
 
   /**
    * Whether the checkbox is disabled
@@ -62,56 +54,55 @@ export interface ChexProps {
   disabled?: boolean;
 
   /**
-   * Color when checked
+   * Primary color (checked state)
+   * @default '#1677ff'
    */
-  checkedColor?: ColorValue;
+  primaryColor?: string;
 
   /**
-   * Color when unchecked
+   * Secondary color (background/unchecked)
+   * @default '#fff'
    */
-  uncheckedColor?: ColorValue;
+  secondaryColor?: string;
 
   /**
-   * Color of the checkmark
-   */
-  checkmarkColor?: ColorValue;
-
-  /**
-   * Border color when unchecked
-   */
-  borderColor?: ColorValue;
-
-  /**
-   * Haptic feedback on toggle
-   * @default true
-   */
-  vibration?: VibrationIntensity;
-
-  /**
-   * Optional label text
+   * Label text to display next to checkbox
    */
   label?: string;
 
   /**
-   * Label position
+   * Position of the label relative to checkbox
    * @default 'right'
    */
-  labelPosition?: 'left' | 'right';
+  labelPosition?: LabelPosition;
 
   /**
-   * Label text style
+   * Custom styles for the label text
    */
-  labelStyle?: TextStyle;
+  labelStyle?: StyleProp<TextStyle>;
 
   /**
-   * Container style
+   * Custom styles for the container
    */
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 
   /**
-   * Custom checkmark icon
+   * Text to show when flip variant is ON
+   * @default 'Yeah!'
    */
-  checkIcon?: React.ReactNode;
+  flipOnText?: string;
+
+  /**
+   * Text to show when flip variant is OFF
+   * @default 'Nope'
+   */
+  flipOffText?: string;
+
+  /**
+   * Enable haptic feedback on toggle
+   * @default true
+   */
+  vibration?: boolean;
 
   /**
    * Accessibility label

@@ -97,11 +97,59 @@ const groupedOptions: DDownGroup[] = [
 export const DDownExamples: React.FC = () => {
   const [basicValue, setBasicValue] = useState<string | number>('');
   const [multiValue, setMultiValue] = useState<(string | number)[]>([]);
-  const [glassmorphValue, setGlassmorphValue] = useState<string | number>('');
   const [neumorphValue, setNeumorphValue] = useState<string | number>('');
   const [gradientValue, setGradientValue] = useState<(string | number)[]>([]);
   const [floatingValue, setFloatingValue] = useState<string | number>('');
   const [animatedValue, setAnimatedValue] = useState<string | number>('');
+
+  // Wrapper functions to handle onChange type compatibility
+  const handleBasicChange = (value: string | number | (string | number)[]) => {
+    if (Array.isArray(value)) {
+      setBasicValue(value[0] || '');
+    } else {
+      setBasicValue(value);
+    }
+  };
+
+  const handleMultiChange = (value: string | number | (string | number)[]) => {
+    if (Array.isArray(value)) {
+      setMultiValue(value);
+    } else {
+      setMultiValue([value]);
+    }
+  };
+
+  const handleGradientChange = (value: string | number | (string | number)[]) => {
+    if (Array.isArray(value)) {
+      setGradientValue(value);
+    } else {
+      setGradientValue([value]);
+    }
+  };
+
+  const handleNeumorphChange = (value: string | number | (string | number)[]) => {
+    if (Array.isArray(value)) {
+      setNeumorphValue(value[0] || '');
+    } else {
+      setNeumorphValue(value);
+    }
+  };
+
+  const handleFloatingChange = (value: string | number | (string | number)[]) => {
+    if (Array.isArray(value)) {
+      setFloatingValue(value[0] || '');
+    } else {
+      setFloatingValue(value);
+    }
+  };
+
+  const handleAnimatedChange = (value: string | number | (string | number)[]) => {
+    if (Array.isArray(value)) {
+      setAnimatedValue(value[0] || '');
+    } else {
+      setAnimatedValue(value);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -113,7 +161,7 @@ export const DDownExamples: React.FC = () => {
         <DDown
           options={basicOptions}
           value={basicValue}
-          onChange={setBasicValue}
+          onChange={handleBasicChange}
           placeholder="Select a fruit"
           title="Choose Your Favorite Fruit"
           size="lg"
@@ -144,7 +192,7 @@ export const DDownExamples: React.FC = () => {
         <DDown
           options={frameworkOptions}
           value={basicValue}
-          onChange={setBasicValue}
+          onChange={handleBasicChange}
           placeholder="Select a framework"
           variant="default"
           size="lg"
@@ -161,7 +209,7 @@ export const DDownExamples: React.FC = () => {
         <DDown
           options={frameworkOptions}
           value={multiValue}
-          onChange={setMultiValue}
+          onChange={handleMultiChange}
           placeholder="Select multiple frameworks"
           multiSelect
           variant="filled"
@@ -195,7 +243,7 @@ export const DDownExamples: React.FC = () => {
         <DDown
           options={frameworkOptions}
           value={multiValue}
-          onChange={setMultiValue}
+          onChange={handleMultiChange}
           placeholder="Select frameworks"
           multiSelect
           searchable
@@ -220,7 +268,7 @@ export const DDownExamples: React.FC = () => {
         <DDown
           options={basicOptions}
           value={gradientValue}
-          onChange={setGradientValue}
+          onChange={handleGradientChange}
           placeholder="Gradient dropdown"
           multiSelect
           variant="gradient"
@@ -239,7 +287,7 @@ export const DDownExamples: React.FC = () => {
         <DDown
           options={frameworkOptions}
           value={neumorphValue}
-          onChange={setNeumorphValue}
+          onChange={handleNeumorphChange}
           placeholder="Neumorphic dropdown"
           neumorphism
           size="xl"
@@ -257,7 +305,7 @@ export const DDownExamples: React.FC = () => {
         <DDown
           options={basicOptions}
           value={floatingValue}
-          onChange={setFloatingValue}
+          onChange={handleFloatingChange}
           placeholder="Select option"
           floatingLabel
           floatingLabelText="Choose Fruit"
@@ -274,7 +322,7 @@ export const DDownExamples: React.FC = () => {
         <DDown
           options={frameworkOptions}
           value={animatedValue}
-          onChange={setAnimatedValue}
+          onChange={handleAnimatedChange}
           placeholder="Animated dropdown"
           searchable
           staggerAnimation
