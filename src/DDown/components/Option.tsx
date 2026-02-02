@@ -36,7 +36,7 @@ export const Option: React.FC<OptionProps> = ({
   rippleEffect = true,
   bounceOnSelect = false,
   variant = 'default',
-  parentBorderRadius = 12,
+  parentBorderRadius: _parentBorderRadius = 12,
 }) => {
   const { theme, mode } = usePressyTheme();
   const isDark = mode === 'dark';

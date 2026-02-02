@@ -55,7 +55,7 @@ export type DDownSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type DDownAnimationType = 'fade' | 'scale' | 'slide' | 'bounce' | 'spring';
 export type DDownShape = 'rounded' | 'square' | 'pill' | 'custom';
 
-export interface DDownProps extends Omit<PressyProps, 'children' | 'onPress'> {
+export interface DDownProps extends Omit<PressyProps, 'children' | 'onPress' | 'variant' | 'shape' | 'size'> {
   /**
    * Array of options to display
    */
@@ -65,6 +65,18 @@ export interface DDownProps extends Omit<PressyProps, 'children' | 'onPress'> {
    * Currently selected value(s)
    */
   value?: string | number | (string | number)[];
+
+  /**
+   * Visual variant of the dropdown
+   * @default 'default'
+   */
+  variant?: DDownVariant;
+
+  /**
+   * Shape of the dropdown
+   * @default 'rounded'
+   */
+  shape?: DDownShape;
 
   /**
    * Callback when selection changes
@@ -105,24 +117,12 @@ export interface DDownProps extends Omit<PressyProps, 'children' | 'onPress'> {
   // ============================================================================
   // UI & STYLING PROPS
   // ============================================================================
-  
-  /**
-   * Dropdown visual variant
-   * @default 'default'
-   */
-  variant?: DDownVariant;
 
   /**
    * Dropdown size preset
    * @default 'md'
    */
   size?: DDownSize;
-
-  /**
-   * Dropdown shape preset
-   * @default 'rounded'
-   */
-  shape?: DDownShape;
 
   /**
    * Enable glassmorphism effect

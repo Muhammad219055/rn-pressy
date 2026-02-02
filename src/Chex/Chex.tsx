@@ -1,3 +1,28 @@
+/**
+ * Chex - Advanced Checkbox Component for React Native
+ * 
+ * A collection of beautifully animated checkbox variants with smooth transitions
+ * and haptic feedback support.
+ * 
+ * Variants:
+ * - classic: Simple checkbox with checkmark animation
+ * - ripple: Box-shadow ripple effect on check
+ * - flip: 3D flip toggle with custom text
+ * - circle-path: Circular SVG path animation
+ * - svg-stroke: SVG stroke dash animation
+ * - morph: Circle-to-square morph with pulse
+ * 
+ * @example
+ * ```tsx
+ * <Chex
+ *   checked={isChecked}
+ *   onValueChange={setIsChecked}
+ *   variant="ripple"
+ *   label="Accept terms"
+ * />
+ * ```
+ */
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import {
   View,
@@ -8,144 +33,26 @@ import {
   Vibration,
   Platform,
 } from 'react-native';
-import type { ChexProps, VibrationIntensity } from './types';
+import Svg, { Path, Polyline, Rect, Mask } from 'react-native-svg';
+import type { ChexProps } from './types';
 import { usePressyTheme } from '../Pressy/PressyProvider';
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedPolyline = Animated.createAnimatedComponent(Polyline);
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 const SIZE_CONFIG = {
-  sm: { box: 20, checkmark: 12, borderRadius: 5, borderWidth: 2 },
-  md: { box: 26, checkmark: 16, borderRadius: 7, borderWidth: 2.5 },
-  lg: { box: 34, checkmark: 20, borderRadius: 9, borderWidth: 3 },
-} as const;
-
-const VIBRATION_DURATION = {
-  light: 10,
-  medium: 20,
-  heavy: 40,
+  sm: { box: 18, fontSize: 14 },
+  md: { box: 24, fontSize: 16 },
+  lg: { box: 30, fontSize: 18 },
 } as const;
 
 // ============================================================================
-// Helpers
-// ============================================================================
-
-const getVibrationDuration = (intensity: VibrationIntensity): number => {
-  if (typeof intensity === 'boolean') return VIBRATION_DURATION.medium;
-  return VIBRATION_DURATION[intensity] ?? VIBRATION_DURATION.medium;
-};
-
-// ============================================================================
-// Checkmark Component - Animated SVG-like checkmark using Views
-// ============================================================================
-
-const AnimatedCheckmark: React.FC<{
-  size: number;
-  color: string;
-  progress: Animated.Value;
-}> = ({ size, color, progress }) => {
-  // Animate the checkmark drawing
-  const shortLegWidth = progress.interpolate({
-    inputRange: [0, 0.4, 1],
-    outputRange: [0, size * 0.35, size * 0.35],
-    extrapolate: 'clamp',
-  });
-
-  const longLegWidth = progress.interpolate({
-    inputRange: [0, 0.4, 1],
-    outputRange: [0, 0, size * 0.6],
-    extrapolate: 'clamp',
-  });
-
-  return (
-    <View style={[styles.checkmarkContainer, { width: size, height: size }]}>
-      {/* Short leg (goes down-left) */}
-      <Animated.View
-        style={[
-          styles.checkmarkLeg,
-          {
-            width: shortLegWidth,
-            height: size * 0.12,
-            backgroundColor: color,
-            transform: [
-              { translateX: -size * 0.08 },
-              { translateY: size * 0.12 },
-              { rotate: '45deg' },
-            ],
-          },
-        ]}
-      />
-      {/* Long leg (goes down-right) */}
-      <Animated.View
-        style={[
-          styles.checkmarkLeg,
-          {
-            width: longLegWidth,
-            height: size * 0.12,
-            backgroundColor: color,
-            transform: [
-              { translateX: size * 0.08 },
-              { translateY: size * 0.02 },
-              { rotate: '-45deg' },
-            ],
-          },
-        ]}
-      />
-    </View>
-  );
-};
-
-// Simple non-animated checkmark
-const Checkmark: React.FC<{ size: number; color: string }> = ({ size, color }) => (
-  <View style={[styles.checkmarkContainer, { width: size, height: size }]}>
-    <View
-      style={[
-        styles.checkmarkLeg,
-        {
-          width: size * 0.35,
-          height: size * 0.12,
-          backgroundColor: color,
-          transform: [
-            { translateX: -size * 0.08 },
-            { translateY: size * 0.12 },
-            { rotate: '45deg' },
-          ],
-        },
-      ]}
-    />
-    <View
-      style={[
-        styles.checkmarkLeg,
-        {
-          width: size * 0.6,
-          height: size * 0.12,
-          backgroundColor: color,
-          transform: [
-            { translateX: size * 0.08 },
-            { translateY: size * 0.02 },
-            { rotate: '-45deg' },
-          ],
-        },
-      ]}
-    />
-  </View>
-);
-
-// Indeterminate line
-const IndeterminateMark: React.FC<{ size: number; color: string }> = ({ size, color }) => (
-  <View
-    style={{
-      width: size * 0.5,
-      height: size * 0.12,
-      backgroundColor: color,
-      borderRadius: size * 0.06,
-    }}
-  />
-);
-
-// ============================================================================
-// Main Component
+// Chex Component
 // ============================================================================
 
 export const Chex: React.FC<ChexProps> = ({
@@ -153,64 +60,102 @@ export const Chex: React.FC<ChexProps> = ({
   onValueChange,
   variant = 'classic',
   size = 'md',
-  indeterminate = false,
   disabled = false,
-  checkedColor,
-  uncheckedColor,
-  checkmarkColor,
-  borderColor,
-  vibration = true,
+  primaryColor,
+  secondaryColor,
   label,
   labelPosition = 'right',
   labelStyle,
   style,
-  checkIcon,
+  flipOnText = 'Yeah!',
+  flipOffText = 'Nope',
+  vibration = true,
   accessibilityLabel,
   testID,
 }) => {
+  // Theme integration
   const { theme, mode } = usePressyTheme();
   const isDark = mode === 'dark';
+
+  // Resolve colors with theme fallbacks
+  const resolvedPrimaryColor = primaryColor || theme.colors.primary;
+  const resolvedSecondaryColor = secondaryColor || (isDark ? '#1f2937' : '#fff');
+  const labelColor = isDark ? '#e5e7eb' : '#333';
 
   // Animation values
   const checkAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const fillAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
-  const rotateAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
-  const bubbleAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
-
-  // Colors - using String() to avoid type issues
-  const resolvedCheckedColor = String(checkedColor || theme.colors.primary);
-  const resolvedUncheckedColor = String(uncheckedColor || (isDark ? '#3f3f46' : '#e4e4e7'));
-  const resolvedCheckmarkColor = String(checkmarkColor || '#ffffff');
-  const resolvedBorderColor = String(borderColor || (isDark ? '#52525b' : '#d4d4d8'));
-  const labelColor = isDark ? '#fafafa' : '#18181b';
+  const rippleAnim = useRef(new Animated.Value(0)).current;
+  const flipAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
+  const pathAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
+  const strokeAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
+  const morphAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;
 
   const sizeConfig = SIZE_CONFIG[size];
 
   // Animate based on variant
   useEffect(() => {
-    const toValue = checked || indeterminate ? 1 : 0;
-    
+    const toValue = checked ? 1 : 0;
+
     switch (variant) {
-      case 'bounce':
+      case 'ripple':
         Animated.parallel([
           Animated.spring(checkAnim, {
             toValue,
-            useNativeDriver: true,
-            tension: 400,
-            friction: 8,
+            useNativeDriver: false,
+            tension: 300,
+            friction: 10,
+          }),
+          Animated.timing(rippleAnim, {
+            toValue,
+            duration: 500,
+            useNativeDriver: false,
+          }),
+        ]).start();
+        break;
+
+      case 'flip':
+        Animated.timing(flipAnim, {
+          toValue,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+        break;
+
+      case 'circle-path':
+        Animated.timing(pathAnim, {
+          toValue,
+          duration: 300,
+          useNativeDriver: false,
+        }).start();
+        break;
+
+      case 'svg-stroke':
+        Animated.timing(strokeAnim, {
+          toValue,
+          duration: 600,
+          useNativeDriver: false,
+        }).start();
+        break;
+
+      case 'morph':
+        Animated.parallel([
+          Animated.spring(morphAnim, {
+            toValue,
+            useNativeDriver: false,
+            tension: 300,
+            friction: 10,
           }),
           Animated.sequence([
             Animated.spring(scaleAnim, {
-              toValue: 1.3,
-              useNativeDriver: true,
+              toValue: 1.2,
+              useNativeDriver: false,
               tension: 500,
               friction: 5,
             }),
             Animated.spring(scaleAnim, {
               toValue: 1,
-              useNativeDriver: true,
+              useNativeDriver: false,
               tension: 300,
               friction: 8,
             }),
@@ -218,126 +163,16 @@ export const Chex: React.FC<ChexProps> = ({
         ]).start();
         break;
 
-      case 'glow':
-        Animated.parallel([
-          Animated.spring(checkAnim, {
-            toValue,
-            useNativeDriver: true,
-            tension: 300,
-            friction: 15,
-          }),
-          Animated.timing(glowAnim, {
-            toValue,
-            duration: 300,
-            useNativeDriver: false,
-          }),
-        ]).start();
-        break;
-
-      case 'fill':
-        Animated.parallel([
-          Animated.spring(fillAnim, {
-            toValue,
-            useNativeDriver: true,
-            tension: 400,
-            friction: 12,
-          }),
-          Animated.timing(checkAnim, {
-            toValue,
-            duration: 200,
-            delay: 100,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        break;
-
-      case 'stamp':
-        Animated.parallel([
-          Animated.spring(checkAnim, {
-            toValue,
-            useNativeDriver: true,
-            tension: 600,
-            friction: 8,
-          }),
-          Animated.sequence([
-            Animated.timing(rotateAnim, {
-              toValue: toValue * 0.5,
-              duration: 100,
-              useNativeDriver: true,
-            }),
-            Animated.spring(rotateAnim, {
-              toValue,
-              useNativeDriver: true,
-              tension: 400,
-              friction: 6,
-            }),
-          ]),
-        ]).start();
-        break;
-
-      case 'tick':
-        Animated.timing(checkAnim, {
+      case 'classic':
+      default:
+        Animated.spring(checkAnim, {
           toValue,
-          duration: toValue ? 400 : 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
+          tension: 300,
+          friction: 10,
         }).start();
-        break;
-
-      case 'bubble':
-        Animated.parallel([
-          Animated.spring(bubbleAnim, {
-            toValue,
-            useNativeDriver: true,
-            tension: 350,
-            friction: 10,
-          }),
-          Animated.sequence([
-            Animated.timing(scaleAnim, {
-              toValue: toValue ? 0.8 : 1,
-              duration: 80,
-              useNativeDriver: true,
-            }),
-            Animated.spring(scaleAnim, {
-              toValue: toValue ? 1.15 : 1,
-              useNativeDriver: true,
-              tension: 400,
-              friction: 6,
-            }),
-            Animated.spring(scaleAnim, {
-              toValue: 1,
-              useNativeDriver: true,
-              tension: 200,
-              friction: 10,
-            }),
-          ]),
-        ]).start();
-        break;
-
-      default: // classic, circle
-        Animated.parallel([
-          Animated.spring(checkAnim, {
-            toValue,
-            useNativeDriver: true,
-            tension: 350,
-            friction: 12,
-          }),
-          Animated.sequence([
-            Animated.spring(scaleAnim, {
-              toValue: 0.9,
-              useNativeDriver: true,
-              tension: 400,
-              friction: 10,
-            }),
-            Animated.spring(scaleAnim, {
-              toValue: 1,
-              useNativeDriver: true,
-              tension: 300,
-              friction: 10,
-            }),
-          ]),
-        ]).start();
     }
-  }, [checked, indeterminate, variant, checkAnim, scaleAnim, fillAnim, glowAnim, rotateAnim, bubbleAnim]);
+  }, [checked, variant, checkAnim, rippleAnim, flipAnim, pathAnim, strokeAnim, morphAnim, scaleAnim]);
 
   // Handle press
   const handlePress = useCallback(() => {
@@ -345,7 +180,7 @@ export const Chex: React.FC<ChexProps> = ({
 
     // Haptic feedback
     if (vibration && Platform.OS !== 'web') {
-      Vibration.vibrate(getVibrationDuration(vibration));
+      Vibration.vibrate(10);
     }
 
     onValueChange(!checked);
@@ -353,271 +188,251 @@ export const Chex: React.FC<ChexProps> = ({
 
   // Render checkbox based on variant
   const renderCheckbox = () => {
-    const isActive = checked || indeterminate;
-    const backgroundColor = isActive ? resolvedCheckedColor : resolvedUncheckedColor;
-
     switch (variant) {
-      case 'bounce':
+      case 'ripple':
         return (
           <Animated.View
             style={[
-              styles.checkboxBase,
+              styles.rippleContainer,
               {
                 width: sizeConfig.box,
                 height: sizeConfig.box,
-                borderRadius: sizeConfig.borderRadius,
-                backgroundColor,
-                borderWidth: isActive ? 0 : sizeConfig.borderWidth,
-                borderColor: resolvedBorderColor,
+                borderRadius: 5,
+                backgroundColor: checked ? resolvedPrimaryColor : resolvedSecondaryColor,
+                borderWidth: checked ? 0 : 1,
+                borderColor: isDark ? '#4b5563' : '#d9d9d9',
                 opacity: disabled ? 0.5 : 1,
-                transform: [{ scale: scaleAnim }],
-              },
-            ]}
-          >
-            <Animated.View
-              style={[
-                styles.checkmarkWrapper,
-                { transform: [{ scale: checkAnim }], opacity: checkAnim },
-              ]}
-            >
-              {indeterminate ? (
-                <IndeterminateMark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              ) : checkIcon || (
-                <Checkmark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              )}
-            </Animated.View>
-          </Animated.View>
-        );
-
-      case 'glow':
-        const glowRadius = glowAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0, 12],
-        });
-        return (
-          <Animated.View
-            style={[
-              styles.checkboxBase,
-              {
-                width: sizeConfig.box,
-                height: sizeConfig.box,
-                borderRadius: sizeConfig.borderRadius,
-                backgroundColor,
-                borderWidth: isActive ? 0 : sizeConfig.borderWidth,
-                borderColor: resolvedBorderColor,
-                opacity: disabled ? 0.5 : 1,
-                shadowColor: resolvedCheckedColor,
+                shadowColor: resolvedPrimaryColor,
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: isActive ? 0.6 : 0,
-                shadowRadius: glowRadius as unknown as number,
-                elevation: isActive ? 8 : 0,
+                shadowOpacity: rippleAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.5],
+                }),
+                shadowRadius: rippleAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, sizeConfig.box / 2.5],
+                }) as any,
               },
             ]}
           >
             <Animated.View
-              style={[styles.checkmarkWrapper, { transform: [{ scale: checkAnim }], opacity: checkAnim }]}
+              style={{
+                opacity: checkAnim,
+                transform: [
+                  {
+                    scale: checkAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1.2],
+                    }),
+                  },
+                ],
+              }}
             >
-              {indeterminate ? (
-                <IndeterminateMark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              ) : checkIcon || (
-                <Checkmark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              )}
+              <View
+                style={{
+                  width: 4,
+                  height: 7,
+                  borderRightWidth: 2,
+                  borderBottomWidth: 2,
+                  borderColor: resolvedSecondaryColor,
+                  transform: [{ rotate: '45deg' }, { translateY: -1 }],
+                }}
+              />
             </Animated.View>
           </Animated.View>
         );
 
-      case 'fill':
-        const fillScale = fillAnim.interpolate({
+      case 'flip':
+        const frontRotate = flipAnim.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, 1],
+          outputRange: ['0deg', '180deg'],
+        });
+        const backRotate = flipAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['-180deg', '0deg'],
         });
         return (
           <View
             style={[
-              styles.checkboxBase,
+              styles.flipContainer,
               {
-                width: sizeConfig.box,
+                width: sizeConfig.box * 3,
                 height: sizeConfig.box,
-                borderRadius: sizeConfig.borderRadius,
-                backgroundColor: resolvedUncheckedColor,
-                borderWidth: sizeConfig.borderWidth,
-                borderColor: isActive ? resolvedCheckedColor : resolvedBorderColor,
                 opacity: disabled ? 0.5 : 1,
-                overflow: 'hidden',
               },
             ]}
           >
             <Animated.View
               style={[
-                styles.fillInner,
+                styles.flipSide,
                 {
-                  backgroundColor: resolvedCheckedColor,
-                  borderRadius: sizeConfig.borderRadius - 2,
-                  transform: [{ scale: fillScale }],
+                  backgroundColor: '#FF3A19',
+                  transform: [{ rotateY: frontRotate }],
+                  backfaceVisibility: 'hidden',
                 },
               ]}
-            />
+            >
+              <Text style={[styles.flipText, { fontSize: sizeConfig.fontSize }]}>
+                {flipOffText}
+              </Text>
+            </Animated.View>
             <Animated.View
               style={[
-                styles.checkmarkWrapper,
-                { position: 'absolute', transform: [{ scale: checkAnim }], opacity: checkAnim },
+                styles.flipSide,
+                {
+                  backgroundColor: checked ? '#7FC6A6' : '#02C66F',
+                  transform: [{ rotateY: backRotate }],
+                  backfaceVisibility: 'hidden',
+                  position: 'absolute',
+                },
               ]}
             >
-              {indeterminate ? (
-                <IndeterminateMark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              ) : checkIcon || (
-                <Checkmark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              )}
+              <Text style={[styles.flipText, { fontSize: sizeConfig.fontSize }]}>
+                {flipOnText}
+              </Text>
             </Animated.View>
           </View>
         );
 
-      case 'stamp':
-        const stampRotate = rotateAnim.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: ['-15deg', '10deg', '0deg'],
-        });
-        const stampScale = rotateAnim.interpolate({
-          inputRange: [0, 0.5, 1],
-          outputRange: [0.3, 1.2, 1],
-        });
-        return (
-          <View
-            style={[
-              styles.checkboxBase,
-              {
-                width: sizeConfig.box,
-                height: sizeConfig.box,
-                borderRadius: sizeConfig.borderRadius,
-                backgroundColor,
-                borderWidth: isActive ? 0 : sizeConfig.borderWidth,
-                borderColor: resolvedBorderColor,
-                opacity: disabled ? 0.5 : 1,
-              },
-            ]}
-          >
-            <Animated.View
-              style={[
-                styles.checkmarkWrapper,
-                {
-                  transform: [{ rotate: stampRotate }, { scale: stampScale }],
-                  opacity: checkAnim,
-                },
-              ]}
-            >
-              {indeterminate ? (
-                <IndeterminateMark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              ) : checkIcon || (
-                <Checkmark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              )}
-            </Animated.View>
-          </View>
-        );
-
-      case 'tick':
-        return (
-          <View
-            style={[
-              styles.checkboxBase,
-              {
-                width: sizeConfig.box,
-                height: sizeConfig.box,
-                borderRadius: sizeConfig.borderRadius,
-                backgroundColor,
-                borderWidth: isActive ? 0 : sizeConfig.borderWidth,
-                borderColor: resolvedBorderColor,
-                opacity: disabled ? 0.5 : 1,
-              },
-            ]}
-          >
-            {(checked || indeterminate) && (
-              indeterminate ? (
-                <IndeterminateMark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              ) : (
-                <AnimatedCheckmark
-                  size={sizeConfig.checkmark}
-                  color={resolvedCheckmarkColor}
-                  progress={checkAnim}
-                />
-              )
-            )}
-          </View>
-        );
-
-      case 'bubble':
-        const bubbleScale = bubbleAnim.interpolate({
+      case 'circle-path':
+        const pathDashOffset = pathAnim.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, 1],
+          outputRange: [0, 60], // Circle visible when unchecked, disappears when checked
         });
+        const polylineDashOffset = pathAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [66, 42], // Checkmark hidden when unchecked, appears when checked
+        });
+        const circleStrokeColor = checked ? resolvedPrimaryColor : (isDark ? '#6b7280' : '#c8ccd4');
+        return (
+          <View
+            style={[
+              styles.circlePathContainer,
+              {
+                width: sizeConfig.box,
+                height: sizeConfig.box,
+                opacity: disabled ? 0.5 : 1,
+              },
+            ]}
+          >
+            <Svg width={sizeConfig.box} height={sizeConfig.box} viewBox="0 0 18 18">
+              <AnimatedPath
+                d="M 1 9 L 1 9 c 0 -5 3 -8 8 -8 L 9 1 C 14 1 17 5 17 9 L 17 9 c 0 4 -4 8 -8 8 L 9 17 C 5 17 1 14 1 9 L 1 9 Z"
+                stroke={circleStrokeColor as any}
+                strokeWidth={1.5}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray={60}
+                strokeDashoffset={pathDashOffset as any}
+              />
+              <AnimatedPolyline
+                points="1 9 7 14 15 4"
+                stroke={circleStrokeColor as any}
+                strokeWidth={1.5}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray={22}
+                strokeDashoffset={polylineDashOffset as any}
+              />
+            </Svg>
+          </View>
+        );
+
+      case 'svg-stroke':
+        const boxDashOffset = strokeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [800, 0],
+        });
+        const tickDashOffset = strokeAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [172, 0],
+        });
+        const svgFillColor = isDark ? 'rgba(75, 85, 99, 0.425)' : 'rgba(207, 205, 205, 0.425)';
+        return (
+          <View
+            style={[
+              styles.svgStrokeContainer,
+              {
+                width: sizeConfig.box,
+                height: sizeConfig.box,
+                opacity: disabled ? 0.5 : 1,
+              },
+            ]}
+          >
+            <Svg width={sizeConfig.box} height={sizeConfig.box} viewBox="0 0 200 200">
+              <Mask fill="white" id="path-1-inside-1">
+                <Rect height={200} width={200} />
+              </Mask>
+              <AnimatedRect
+                mask="url(#path-1-inside-1)"
+                strokeWidth={40}
+                height={200}
+                width={200}
+                fill={svgFillColor}
+                stroke={resolvedPrimaryColor as any}
+                strokeDasharray={800}
+                strokeDashoffset={boxDashOffset as any}
+              />
+              <AnimatedPath
+                strokeWidth={15}
+                d="M52 111.018L76.9867 136L149 64"
+                stroke={resolvedPrimaryColor as any}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeDasharray={172}
+                strokeDashoffset={tickDashOffset as any}
+              />
+            </Svg>
+          </View>
+        );
+
+      case 'morph':
+        const borderRadius = morphAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [sizeConfig.box / 2, sizeConfig.box * 0.25],
+        });
+        const backgroundColor = checked ? resolvedPrimaryColor : (isDark ? '#4b5563' : '#ccc');
+        const checkmarkColor = isDark ? '#1f2937' : '#E0E0E2';
         return (
           <Animated.View
             style={[
-              styles.checkboxBase,
+              styles.morphContainer,
               {
                 width: sizeConfig.box,
                 height: sizeConfig.box,
-                borderRadius: sizeConfig.box / 2,
-                backgroundColor: resolvedUncheckedColor,
-                borderWidth: sizeConfig.borderWidth,
-                borderColor: isActive ? resolvedCheckedColor : resolvedBorderColor,
-                opacity: disabled ? 0.5 : 1,
-                transform: [{ scale: scaleAnim }],
-                overflow: 'hidden',
-              },
-            ]}
-          >
-            <Animated.View
-              style={[
-                styles.bubbleInner,
-                {
-                  width: sizeConfig.box,
-                  height: sizeConfig.box,
-                  borderRadius: sizeConfig.box / 2,
-                  backgroundColor: resolvedCheckedColor,
-                  transform: [{ scale: bubbleScale }],
-                },
-              ]}
-            />
-            <Animated.View
-              style={[
-                styles.checkmarkWrapper,
-                { position: 'absolute', transform: [{ scale: checkAnim }], opacity: checkAnim },
-              ]}
-            >
-              {indeterminate ? (
-                <IndeterminateMark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              ) : checkIcon || (
-                <Checkmark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              )}
-            </Animated.View>
-          </Animated.View>
-        );
-
-      case 'circle':
-        return (
-          <Animated.View
-            style={[
-              styles.checkboxBase,
-              {
-                width: sizeConfig.box,
-                height: sizeConfig.box,
-                borderRadius: sizeConfig.box / 2,
+                borderRadius: borderRadius as any,
                 backgroundColor,
-                borderWidth: isActive ? 0 : sizeConfig.borderWidth,
-                borderColor: resolvedBorderColor,
                 opacity: disabled ? 0.5 : 1,
                 transform: [{ scale: scaleAnim }],
               },
             ]}
           >
             <Animated.View
-              style={[styles.checkmarkWrapper, { transform: [{ scale: checkAnim }], opacity: checkAnim }]}
+              style={{
+                opacity: morphAnim,
+                transform: [
+                  {
+                    scale: morphAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1],
+                    }),
+                  },
+                ],
+              }}
             >
-              {indeterminate ? (
-                <IndeterminateMark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              ) : checkIcon || (
-                <Checkmark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              )}
+              <View
+                style={{
+                  width: 4,
+                  height: 7,
+                  borderRightWidth: 2,
+                  borderBottomWidth: 2,
+                  borderColor: checkmarkColor,
+                  transform: [{ rotate: '45deg' }, { translateY: -1 }],
+                }}
+              />
             </Animated.View>
           </Animated.View>
         );
@@ -627,27 +442,41 @@ export const Chex: React.FC<ChexProps> = ({
         return (
           <Animated.View
             style={[
-              styles.checkboxBase,
+              styles.classicContainer,
               {
                 width: sizeConfig.box,
                 height: sizeConfig.box,
-                borderRadius: sizeConfig.borderRadius,
-                backgroundColor,
-                borderWidth: isActive ? 0 : sizeConfig.borderWidth,
-                borderColor: resolvedBorderColor,
+                borderRadius: 5,
+                backgroundColor: checked ? resolvedPrimaryColor : resolvedSecondaryColor,
+                borderWidth: checked ? 0 : 1,
+                borderColor: isDark ? '#4b5563' : '#d9d9d9',
                 opacity: disabled ? 0.5 : 1,
-                transform: [{ scale: scaleAnim }],
               },
             ]}
           >
             <Animated.View
-              style={[styles.checkmarkWrapper, { transform: [{ scale: checkAnim }], opacity: checkAnim }]}
+              style={{
+                opacity: checkAnim,
+                transform: [
+                  {
+                    scale: checkAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1.2],
+                    }),
+                  },
+                ],
+              }}
             >
-              {indeterminate ? (
-                <IndeterminateMark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              ) : checkIcon || (
-                <Checkmark size={sizeConfig.checkmark} color={resolvedCheckmarkColor} />
-              )}
+              <View
+                style={{
+                  width: 4,
+                  height: 7,
+                  borderRightWidth: 2,
+                  borderBottomWidth: 2,
+                  borderColor: resolvedSecondaryColor,
+                  transform: [{ rotate: '45deg' }, { translateY: -1 }],
+                }}
+              />
             </Animated.View>
           </Animated.View>
         );
@@ -662,11 +491,11 @@ export const Chex: React.FC<ChexProps> = ({
         style={[
           styles.label,
           {
-            color: labelColor,
-            fontSize: sizeConfig.box * 0.55,
+            fontSize: sizeConfig.fontSize,
             marginLeft: labelPosition === 'right' ? 10 : 0,
             marginRight: labelPosition === 'left' ? 10 : 0,
             opacity: disabled ? 0.5 : 1,
+            color: labelColor,
           },
           labelStyle,
         ]}
@@ -686,7 +515,7 @@ export const Chex: React.FC<ChexProps> = ({
         style,
       ]}
       accessibilityRole="checkbox"
-      accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}
+      accessibilityState={{ checked, disabled }}
       accessibilityLabel={accessibilityLabel || label}
       testID={testID}
     >
@@ -705,31 +534,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  checkboxBase: {
+  classicContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkmarkWrapper: {
+  rippleContainer: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkmarkContainer: {
+  flipContainer: {
+    position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkmarkLeg: {
-    position: 'absolute',
-    borderRadius: 2,
+  flipSide: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 4,
+  },
+  flipText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  circlePathContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  svgStrokeContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  morphContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   label: {
     fontWeight: '500',
   },
-  fillInner: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  bubbleInner: {
-    position: 'absolute',
-  },
 });
+
+Chex.displayName = 'Chex';

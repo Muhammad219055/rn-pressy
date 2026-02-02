@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Animated, Text, StyleSheet } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 import { usePressyTheme } from '../../Pressy/PressyProvider';
 import type { DDownSize } from '../types';
 import { sizePresets } from '../uiUtils';

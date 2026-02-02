@@ -123,66 +123,22 @@ export const useSearch = (
 
 /**
  * Hook for keyboard navigation
+ * Note: Hardware keyboard navigation is not fully implemented in React Native.
+ * This hook is a placeholder for future keyboard event handling.
+ * Consider using a library like react-native-keyevent for full keyboard support.
  */
 export const useKeyboardNavigation = (
-  isOpen: boolean,
-  filteredOptions: DDownOption[],
-  highlightedIndex: number,
-  setHighlightedIndex: (index: number) => void,
-  onSelect: (option: DDownOption) => void,
-  onClose: () => void,
-  enabled: boolean = true
+  _isOpen: boolean,
+  _filteredOptions: DDownOption[],
+  _highlightedIndex: number,
+  _setHighlightedIndex: (index: number) => void,
+  _onSelect: (option: DDownOption) => void,
+  _onClose: () => void,
+  _enabled: boolean = true
 ) => {
-  useEffect(() => {
-    if (!enabled || !isOpen) return;
-
-    const handleKeyPress = (event: any) => {
-      switch (event.key) {
-        case 'ArrowDown':
-          event.preventDefault();
-          setHighlightedIndex(
-            highlightedIndex < filteredOptions.length - 1 
-              ? highlightedIndex + 1 
-              : 0
-          );
-          break;
-        case 'ArrowUp':
-          event.preventDefault();
-          setHighlightedIndex(
-            highlightedIndex > 0 
-              ? highlightedIndex - 1 
-              : filteredOptions.length - 1
-          );
-          break;
-        case 'Enter':
-          event.preventDefault();
-          if (highlightedIndex >= 0 && filteredOptions[highlightedIndex]) {
-            onSelect(filteredOptions[highlightedIndex]);
-          }
-          break;
-        case 'Escape':
-          event.preventDefault();
-          onClose();
-          break;
-      }
-    };
-
-    // Note: This is a simplified version for React Native
-    // In a real implementation, you'd need to handle hardware keyboard events
-    // or use a library like react-native-keyevent
-    
-    return () => {
-      // Cleanup if needed
-    };
-  }, [
-    enabled,
-    isOpen,
-    highlightedIndex,
-    filteredOptions,
-    setHighlightedIndex,
-    onSelect,
-    onClose,
-  ]);
+  // Placeholder for keyboard navigation
+  // In a real implementation, you would handle hardware keyboard events here
+  // using a library like react-native-keyevent or platform-specific event handlers
 };
 
 /**
@@ -199,7 +155,7 @@ export const useDropdownLayout = () => {
   const triggerRef = useRef<any>(null);
 
   useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+    const subscription = Dimensions.addEventListener('change', ({ window }: { window: any }) => {
       setWindowDimensions(window);
     });
 

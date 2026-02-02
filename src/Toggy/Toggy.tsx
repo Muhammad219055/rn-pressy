@@ -6,7 +6,6 @@ import {
   Pressable,
   Vibration,
   Platform,
-  TouchableWithoutFeedback,
 } from 'react-native';
 import type { ToggyProps } from './types';
 
@@ -162,7 +161,7 @@ const SliderSwitch = ({ value, anim, activeColor, inactiveColor, disabled }: any
 // Style 5: Elastic (Two-ball swap effect)
 // ============================================================================
 
-const ElasticSwitch = ({ value, anim, activeColor, inactiveColor, disabled }: any) => {
+const ElasticSwitch = ({ value: _value, anim, activeColor, inactiveColor, disabled }: any) => {
   // Left ball (grey) slides out to left when ON
   const leftBallTranslate = anim.interpolate({
     inputRange: [0, 1],

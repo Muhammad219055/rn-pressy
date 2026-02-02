@@ -25,6 +25,7 @@ It scales. It pulses. It literally shakes when you mess up (like your hands afte
 - **Tertiary** - Background character that's actually useful
 - **Outline** - Minimalist flex
 - **Ghost** - Invisible until you need it (like your dad)
+- **3D** - Pushable button with depth (like a real button, but digital)
 
 ### 📏 **Size Presets** (Size Does Matter)
 
@@ -106,6 +107,7 @@ Congrats, you made a button. Your parents are so proud. 🎉
 <Pressy title="Tertiary" variant="tertiary" onPress={() => {}} />
 <Pressy title="Outline" variant="outline" onPress={() => {}} />
 <Pressy title="Ghost" variant="ghost" onPress={() => {}} />
+<Pressy title="3D Button" variant="3d" onPress={() => {}} />
 ```
 
 ### Sizes (From Smol to Chonk)

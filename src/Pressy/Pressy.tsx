@@ -237,6 +237,7 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
   const glareAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0.3)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  const translateYAnim = useRef(new Animated.Value(-4)).current; // For 3D effect
   // State interpolation: 0 = Idle, 1 = Success, -1 = Error
   const stateAnim = useRef(new Animated.Value(0)).current;
 
@@ -367,7 +368,7 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
 
   const [buttonWidth, setButtonWidth] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
-  const [isSwipeComplete, setIsSwipeComplete] = useState(false);
+  const [_isSwipeComplete, _setIsSwipeComplete] = useState(false);
   const lastTapRef = useRef(0);
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -545,9 +546,11 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
   const handlePressIn = useCallback(() => {
     if (isDisabled || swipeable) return;
 
+    const is3DVariant = effectiveVariant === '3d';
+
     Animated.parallel([
       Animated.spring(scaleAnim, {
-        toValue: scaleValue,
+        toValue: is3DVariant ? 1 : scaleValue,
         useNativeDriver: true,
         speed: animationSpeed,
         bounciness: 0,
@@ -557,19 +560,32 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
         duration: 100,
         useNativeDriver: true,
       }),
+      ...(is3DVariant
+        ? [
+            Animated.timing(translateYAnim, {
+              toValue: -0,
+              duration: 20,
+              useNativeDriver: true,
+            }),
+          ]
+        : []),
     ]).start();
   }, [
     isDisabled,
     swipeable,
+    effectiveVariant,
     scaleAnim,
     scaleValue,
     animationSpeed,
     opacityAnim,
     opacityValue,
+    translateYAnim,
   ]);
 
   const handlePressOut = useCallback(() => {
     if (isDisabled || swipeable) return;
+
+    const is3DVariant = effectiveVariant === '3d';
 
     Animated.parallel([
       Animated.spring(scaleAnim, {
@@ -583,8 +599,18 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
         duration: 100,
         useNativeDriver: true,
       }),
+      ...(is3DVariant
+        ? [
+            Animated.spring(translateYAnim, {
+              toValue: -4,
+              useNativeDriver: true,
+              speed: animationSpeed,
+              bounciness: 0,
+            }),
+          ]
+        : []),
     ]).start();
-  }, [isDisabled, swipeable, scaleAnim, animationSpeed, opacityAnim]);
+  }, [isDisabled, swipeable, effectiveVariant, scaleAnim, animationSpeed, opacityAnim, translateYAnim]);
 
   // ==========================================================================
   // Haptic Helper
@@ -703,7 +729,6 @@ const panResponder = useMemo(() => {
         swipeAnim.setValue(Math.max(0, clampedDx));
       },
       onPanResponderRelease: (_, gestureState) => {
-        const dx = gestureState.dx;
         const vx = gestureState.vx; // Velocity for momentum-based threshold
         const direction = swipeDirection === 'right' ? 1 : -1;
         const thumbWidth = sizeConfig.minHeight;
@@ -725,7 +750,7 @@ const panResponder = useMemo(() => {
             tension: 80,
             friction: 10,
           }).start(() => {
-            setIsSwipeComplete(true);
+            _setIsSwipeComplete(true);
             triggerHaptic();
             onSwipeComplete?.();
           });
@@ -908,6 +933,48 @@ const panResponder = useMemo(() => {
   }, [effectiveGlow, glowColor, resolvedColors.primary]);
 
   // ==========================================================================
+  // 3D Effect Layers
+  // ==========================================================================
+
+  const is3D = effectiveVariant === '3d';
+
+  const render3DLayers = useMemo(() => {
+    if (!is3D) return null;
+
+    // Parse the base color to create darker variants for edge and shadow
+    // Simple approach: use darker shades
+    const edgeColor = '#5b21b6'; // Darker purple for edge
+    const shadowColor = '#9ca3af'; // Gray for shadow
+
+    return (
+      <>
+        {/* Shadow Layer */}
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: shadowColor,
+              borderRadius: presetStyles.container.borderRadius ?? 8,
+              transform: [{ translateY: 2 }],
+              opacity: 0.6,
+            },
+          ]}
+        />
+        {/* Edge Layer */}
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: edgeColor,
+              borderRadius: presetStyles.container.borderRadius ?? 8,
+            },
+          ]}
+        />
+      </>
+    );
+  }, [is3D, resolvedColors.primary, presetStyles.container.borderRadius]);
+
+  // ==========================================================================
   // Swipeable Rendering
   // ==========================================================================
 
@@ -1026,6 +1093,7 @@ const panResponder = useMemo(() => {
         effectiveGlow && { shadowOpacity: glowAnim },
       ]}
     >
+      {render3DLayers}
       <AnimatedPressable
         onPress={handlePress}
         onLongPress={onLongPress ? handleLongPress : undefined}
@@ -1038,7 +1106,11 @@ const panResponder = useMemo(() => {
           styles.container,
           presetStyles.container,
           {
-            transform: [{ scale: combinedScale }, { translateX: shakeAnim }],
+            transform: [
+              { scale: combinedScale },
+              { translateX: shakeAnim },
+              ...(is3D ? [{ translateY: translateYAnim }] : []),
+            ],
             opacity: isDisabled
               ? disabledOpacity
               : (opacityAnim as unknown as number),
