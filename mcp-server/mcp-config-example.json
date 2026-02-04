@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "rn-pressy": {
+      "command": "node",
+      "args": ["/absolute/path/to/rn-pressy/mcp-server/index.js"],
+      "description": "rn-pressy React Native UI library documentation and examples",
+      "disabled": false,
+      "autoApprove": [
+        "get_component_info",
+        "get_component_example",
+        "list_components",
+        "search_features",
+        "get_props_reference",
+        "compare_variants"
+      ]
+    }
+  }
+}

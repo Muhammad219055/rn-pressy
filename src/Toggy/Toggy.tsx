@@ -8,6 +8,8 @@ import {
   Platform,
 } from 'react-native';
 import type { ToggyProps } from './types';
+import { usePressyTheme } from '../Pressy/PressyProvider';
+import { LiquidGlassWrapper } from '../LiquidGlass';
 
 // ============================================================================
 // Shared Hook for Animation
@@ -207,135 +209,56 @@ const ElasticSwitch = ({ value: _value, anim, activeColor, inactiveColor, disabl
   );
 };
 
-// ============================================================================
-// New: Bouncer Variants
-// ============================================================================
-
-// ── Variant A: Fixed split track + inverted sliding thumb ──
-// ── Variant A: Fixed split track + inverted sliding thumb ──
-// const BouncerFixed = ({
-//   value,
-//   anim,
-//   disabled,
-// }: {
-//   value: boolean;
-//   anim: Animated.Value;
-//   disabled: boolean;
-// }) => {
-//   const thumbTranslateX = anim.interpolate({
-//     inputRange: [0, 1],
-//     outputRange: [0, 16],
-//   });
-
-//   return (
-//     <View style={[styles.bouncerContainer, disabled && styles.disabled]}>
-//       <View style={styles.bouncerTrackLeft} />
-//       <View style={styles.bouncerTrackRight} />
-
-//       <Animated.View
-//         style={[
-//           styles.bouncerThumb,
-//           { transform: [{ translateX: thumbTranslateX }] },
-//         ]}
-//       >
-//         <View style={styles.bouncerThumbLeft} />
-//         <View style={styles.bouncerThumbRight} />
-//       </Animated.View>
-//     </View>
-//   );
-// };
-
-// ── Variant B: Improved Bouncer Push ──
-// ── Variant B: Improved Bouncer Push ──
-// const BouncerPush = ({
-//   value,
-//   anim,
-//   onValueChange,
-//   disabled,
-// }: {
-//   value: boolean;
-//   anim: Animated.Value;
-//   onValueChange: (v: boolean) => void;
-//   disabled: boolean;
-// }) => {
-//   // Slide light overlay from visible (0) → fully off-screen left (-48)
-//   const lightTranslateX = anim.interpolate({
-//     inputRange: [0, 1],
-//     outputRange: [0, -48],
-//   });
-
-//   // Thumb color: dark when off → light when on
-//   const thumbColor = anim.interpolate({
-//     inputRange: [0, 1],
-//     outputRange: ['#2a2a2a', '#efefef'],
-//   });
-
-//   // Thumb position: left → right
-//   const thumbTranslateX = anim.interpolate({
-//     inputRange: [0, 1],
-//     outputRange: [0, 16],
-//   });
-
-//   // Optional subtle scale bounce on toggle
-//   const thumbScale = anim.interpolate({
-//     inputRange: [0, 0.5, 1],
-//     outputRange: [1, 0.92, 1],
-//   });
-
-//   const handlePress = useCallback(() => {
-//     if (!disabled) onValueChange(!value);
-//   }, [disabled, onValueChange, value]);
-
-//   return (
-//     <TouchableWithoutFeedback onPress={handlePress} disabled={disabled}>
-//       <View style={[styles.bouncerContainer, disabled && styles.disabled]}>
-//         {/* Permanent dark base */}
-//         <View style={styles.bouncerTrackRight} />
-
-//         {/* Light overlay that slides left when turning ON */}
-//         <Animated.View
-//           style={[
-//             styles.bouncerTrackLeft,
-//             {
-//               transform: [{ translateX: lightTranslateX }],
-//             },
-//           ]}
-//         />
-
-//         {/* Solid thumb that changes color + slight bounce */}
-//         <Animated.View
-//           style={[
-//             styles.bouncerThumbPush,
-//             {
-//               backgroundColor: thumbColor,
-//               transform: [
-//                 { translateX: thumbTranslateX },
-//                 { scale: thumbScale },
-//               ],
-//             },
-//           ]}
-//         />
-//       </View>
-//     </TouchableWithoutFeedback>
-//   );
-// };
 
 // ============================================================================
 // Main Component
 // ============================================================================
+
+// Helper to get glass wrapper styles based on variant
+const getGlassWrapperStyle = (variant: string) => {
+  switch (variant) {
+    case 'solar':
+      return { borderRadius: 50, padding: 4 };
+    case 'slider':
+      return { borderRadius: 20, padding: 2 };
+    case 'elastic':
+      return { borderRadius: 50, padding: 2 };
+    case 'classic':
+    default:
+      return { borderRadius: 12, padding: 2 };
+  }
+};
 
 export const Toggy: React.FC<ToggyProps> = ({
   value,
   onValueChange,
   variant = 'classic',
   disabled = false,
-  trackColor = { true: '#21cc4c', false: 'rgb(182, 182, 182)' },
-  thumbColor = 'rgb(255, 255, 255)',
-  activeColor = '#21cc4c',
-  inactiveColor = '#cccccc',
+  trackColor,
+  thumbColor,
+  activeColor,
+  inactiveColor,
   vibration = true,
   style,
+  // Liquid Glass props
+  liquidGlass = false,
+  liquidGlassInteractive = false,
+  liquidGlassEffect = 'regular',
+  liquidGlassTintColor,
+  liquidGlassColorScheme = 'system',
 }) => {
+  // Theme integration
+  const { theme } = usePressyTheme();
+  
+  // Resolve colors with theme fallbacks
+  const resolvedActiveColor = activeColor || theme.colors.toggleActive;
+  const resolvedInactiveColor = inactiveColor || theme.colors.toggleInactive;
+  const resolvedThumbColor = thumbColor || theme.colors.toggleThumb;
+  const resolvedTrackColor = trackColor || {
+    true: resolvedActiveColor,
+    false: resolvedInactiveColor,
+  };
+  
   const anim = useToggleAnimation(value);
   
   const handlePress = useCallback(() => {
@@ -355,8 +278,8 @@ export const Toggy: React.FC<ToggyProps> = ({
           <SolarSwitch
             value={value}
             anim={anim}
-            activeColor={activeColor}
-            inactiveColor={inactiveColor}
+            activeColor={resolvedActiveColor}
+            inactiveColor={resolvedInactiveColor}
             disabled={disabled}
           />
         );
@@ -365,8 +288,8 @@ export const Toggy: React.FC<ToggyProps> = ({
           <SliderSwitch
             value={value}
             anim={anim}
-            activeColor={activeColor}
-            inactiveColor={inactiveColor}
+            activeColor={resolvedActiveColor}
+            inactiveColor={resolvedInactiveColor}
             disabled={disabled}
           />
         );
@@ -375,53 +298,47 @@ export const Toggy: React.FC<ToggyProps> = ({
           <ElasticSwitch
             value={value}
             anim={anim}
-            activeColor={activeColor}
-            inactiveColor={inactiveColor}
+            activeColor={resolvedActiveColor}
+            inactiveColor={resolvedInactiveColor}
             disabled={disabled}
           />
         );
       
-      // case 'bouncer-push':
-      //   return (
-      //       <BouncerPush
-      //           value={value}
-      //           anim={anim}
-      //           onValueChange={onValueChange}
-      //           disabled={disabled}
-      //       />
-      //   );
-      // case 'bouncer-fixed':
-      //     return (
-      //         <BouncerFixed 
-      //             value={value} 
-      //             anim={anim} 
-      //             disabled={disabled} 
-      //         />
-      //     );
-      // case 'bouncer':
-      //     // Fallback for bouncer to bouncer-fixed
-      //      return (
-      //         <BouncerFixed 
-      //             value={value} 
-      //             anim={anim} 
-      //             disabled={disabled} 
-      //         />
-      //     );
       case 'classic':
       default:
         return (
           <ClassicSwitch
             value={value}
             anim={anim}
-            trackColor={trackColor}
-            thumbColor={thumbColor}
-            activeColor={activeColor}
-            inactiveColor={inactiveColor}
+            trackColor={resolvedTrackColor}
+            thumbColor={resolvedThumbColor}
+            activeColor={resolvedActiveColor}
+            inactiveColor={resolvedInactiveColor}
             disabled={disabled}
           />
         );
     }
   };
+
+  // Wrap in LiquidGlassWrapper when liquidGlass is enabled
+  const switchContent = renderSwitch();
+  
+  const glassWrappedContent = liquidGlass ? (
+    <LiquidGlassWrapper
+      liquidGlass={liquidGlass}
+      interactive={liquidGlassInteractive}
+      effect={liquidGlassEffect}
+      tintColor={liquidGlassTintColor}
+      colorScheme={liquidGlassColorScheme}
+      fallbackBackgroundColor={value 
+        ? (typeof resolvedActiveColor === 'string' ? `${resolvedActiveColor}40` : undefined)
+        : (typeof resolvedInactiveColor === 'string' ? `${resolvedInactiveColor}40` : undefined)
+      }
+      style={getGlassWrapperStyle(variant)}
+    >
+      {switchContent}
+    </LiquidGlassWrapper>
+  ) : switchContent;
 
   return (
     <Pressable
@@ -431,7 +348,7 @@ export const Toggy: React.FC<ToggyProps> = ({
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
     >
-      {renderSwitch()}
+      {glassWrappedContent}
     </Pressable>
   );
 };

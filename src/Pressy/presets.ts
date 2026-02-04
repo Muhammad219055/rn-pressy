@@ -2,7 +2,7 @@ import type { ViewStyle, TextStyle } from 'react-native';
 import type { PressyColors } from './theme';
 
 // ============================================================================
-// Variant Presets
+// Button Variant Presets (Pressy)
 // ============================================================================
 
 /**
@@ -17,7 +17,7 @@ export type Variant =
   | '3d';
 
 /**
- * Get styles for a variant
+ * Get styles for a button variant
  */
 export const getVariantStyles = (
   variant: Variant,
@@ -55,8 +55,8 @@ export const getVariantStyles = (
       };
     case '3d':
       return {
-        container: { backgroundColor: colors.primary },
-        text: { color: colors.primaryText },
+        container: { backgroundColor: colors['3d'] },
+        text: { color: colors['3dText'] },
       };
     default:
       return {
@@ -67,11 +67,194 @@ export const getVariantStyles = (
 };
 
 // ============================================================================
-// Shape Presets
+// Dropdown Variant Presets (DDown)
 // ============================================================================
 
 /**
- * Button shape presets
+ * Dropdown style variants
+ */
+export type DDownVariant = 'default' | 'outlined' | 'filled' | 'ghost' | 'gradient';
+
+/**
+ * Get styles for a dropdown variant
+ */
+export const getDDownVariantStyles = (
+  variant: DDownVariant,
+  colors: PressyColors
+): { container: ViewStyle; text: TextStyle; border: ViewStyle } => {
+  switch (variant) {
+    case 'default':
+      return {
+        container: { backgroundColor: colors.dropdownDefault },
+        text: { color: colors.dropdownDefaultText },
+        border: { borderColor: colors.dropdownDefaultBorder, borderWidth: 1 },
+      };
+    case 'outlined':
+      return {
+        container: { backgroundColor: colors.dropdownOutlined },
+        text: { color: colors.dropdownOutlinedText },
+        border: { borderColor: colors.dropdownOutlinedBorder, borderWidth: 2 },
+      };
+    case 'filled':
+      return {
+        container: { backgroundColor: colors.dropdownFilled },
+        text: { color: colors.dropdownFilledText },
+        border: { borderWidth: 0 },
+      };
+    case 'ghost':
+      return {
+        container: { backgroundColor: colors.dropdownGhost },
+        text: { color: colors.dropdownGhostText },
+        border: { borderWidth: 0 },
+      };
+    case 'gradient':
+      return {
+        container: { backgroundColor: 'transparent' },
+        text: { color: colors.dropdownDefaultText },
+        border: { borderWidth: 0 },
+      };
+    default:
+      return {
+        container: { backgroundColor: colors.dropdownDefault },
+        text: { color: colors.dropdownDefaultText },
+        border: { borderColor: colors.dropdownDefaultBorder, borderWidth: 1 },
+      };
+  }
+};
+
+// ============================================================================
+// Toggle Variant Presets (Toggy)
+// ============================================================================
+
+/**
+ * Toggle style variants
+ */
+export type ToggyVariant =
+  | 'classic'
+  | 'solar'
+  | 'slider'
+  | 'elastic'
+  | 'bouncer'
+  | 'bouncer-fixed'
+  | 'bouncer-push';
+
+/**
+ * Get colors for a toggle variant
+ */
+export const getToggyColors = (
+  colors: PressyColors
+): {
+  active: string;
+  inactive: string;
+  thumb: string;
+  track: string;
+} => {
+  return {
+    active: colors.toggleActive as string,
+    inactive: colors.toggleInactive as string,
+    thumb: colors.toggleThumb as string,
+    track: colors.toggleTrack as string,
+  };
+};
+
+// ============================================================================
+// Checkbox Variant Presets (Chex)
+// ============================================================================
+
+/**
+ * Checkbox style variants
+ */
+export type ChexVariant =
+  | 'classic'
+  | 'ripple'
+  | 'flip'
+  | 'circle-path'
+  | 'svg-stroke'
+  | 'morph';
+
+/**
+ * Get colors for a checkbox variant
+ */
+export const getChexColors = (
+  colors: PressyColors
+): {
+  primary: string;
+  secondary: string;
+  border: string;
+} => {
+  return {
+    primary: colors.checkboxPrimary as string,
+    secondary: colors.checkboxSecondary as string,
+    border: colors.checkboxBorder as string,
+  };
+};
+
+// ============================================================================
+// Input Variant Presets (Inpy)
+// ============================================================================
+
+/**
+ * Input style variants
+ */
+export type InpyVariant = 'outlined' | 'filled' | 'underlined' | 'ghost';
+
+/**
+ * Get styles for an input variant
+ */
+export const getInpyVariantStyles = (
+  variant: InpyVariant,
+  colors: PressyColors
+): {
+  container: ViewStyle;
+  text: TextStyle;
+  border: ViewStyle;
+  focus: { borderColor: string };
+} => {
+  switch (variant) {
+    case 'outlined':
+      return {
+        container: { backgroundColor: colors.inputBackground },
+        text: { color: colors.inputText },
+        border: { borderWidth: 2, borderColor: colors.inputBorder },
+        focus: { borderColor: colors.inputFocus as string },
+      };
+    case 'filled':
+      return {
+        container: { backgroundColor: colors.inputBackground },
+        text: { color: colors.inputText },
+        border: { borderWidth: 0, borderBottomWidth: 2, borderColor: colors.inputBorder },
+        focus: { borderColor: colors.inputFocus as string },
+      };
+    case 'underlined':
+      return {
+        container: { backgroundColor: 'transparent' },
+        text: { color: colors.inputText },
+        border: { borderWidth: 0, borderBottomWidth: 2, borderColor: colors.inputBorder },
+        focus: { borderColor: colors.inputFocus as string },
+      };
+    case 'ghost':
+      return {
+        container: { backgroundColor: 'transparent' },
+        text: { color: colors.inputText },
+        border: { borderWidth: 0 },
+        focus: { borderColor: colors.inputFocus as string },
+      };
+    default:
+      return {
+        container: { backgroundColor: colors.inputBackground },
+        text: { color: colors.inputText },
+        border: { borderWidth: 2, borderColor: colors.inputBorder },
+        focus: { borderColor: colors.inputFocus as string },
+      };
+  }
+};
+
+// ============================================================================
+// Shape Presets (Shared)
+// ============================================================================
+
+/**
+ * Component shape presets
  */
 export type Shape = 'rounded' | 'pill' | 'circle' | 'square';
 
@@ -106,7 +289,7 @@ export const getShapeStyles = (shape: Shape, size: number): ViewStyle => {
 };
 
 // ============================================================================
-// Shadow Presets
+// Shadow Presets (Shared)
 // ============================================================================
 
 /**
@@ -165,13 +348,13 @@ export const getShadowStyles = (
 };
 
 // ============================================================================
-// Size Presets
+// Size Presets (Shared)
 // ============================================================================
 
 /**
- * Button size presets
+ * Component size presets
  */
-export type Size = 'sm' | 'md' | 'lg' | 'xl';
+export type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 /**
  * Size configuration
@@ -189,6 +372,14 @@ export interface SizeConfig {
  */
 export const getSizeConfig = (size: Size): SizeConfig => {
   switch (size) {
+    case 'xs':
+      return {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        fontSize: 12,
+        iconSize: 14,
+        minHeight: 32,
+      };
     case 'sm':
       return {
         paddingVertical: 8,
@@ -228,6 +419,51 @@ export const getSizeConfig = (size: Size): SizeConfig => {
         fontSize: 16,
         iconSize: 20,
         minHeight: 44,
+      };
+  }
+};
+
+// ============================================================================
+// State Styles (Shared)
+// ============================================================================
+
+/**
+ * Get state-specific colors
+ */
+export const getStateColors = (
+  state: 'success' | 'error' | 'warning' | 'info' | 'disabled',
+  colors: PressyColors
+): { background: string; text: string } => {
+  switch (state) {
+    case 'success':
+      return {
+        background: colors.success as string,
+        text: colors.successText as string,
+      };
+    case 'error':
+      return {
+        background: colors.error as string,
+        text: colors.errorText as string,
+      };
+    case 'warning':
+      return {
+        background: colors.warning as string,
+        text: colors.warningText as string,
+      };
+    case 'info':
+      return {
+        background: colors.info as string,
+        text: colors.infoText as string,
+      };
+    case 'disabled':
+      return {
+        background: colors.disabled as string,
+        text: colors.disabledText as string,
+      };
+    default:
+      return {
+        background: colors.primary as string,
+        text: colors.primaryText as string,
       };
   }
 };

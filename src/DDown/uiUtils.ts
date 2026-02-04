@@ -74,34 +74,14 @@ export const shapePresets: Record<string, (size: DDownSize) => number> = {
 // ============================================================================
 export const getVariantStyles = (
   variant: DDownVariant,
-  isDark: boolean,
-  primaryColor: string,
+  themeColors: any, // PressyColors from theme
   gradientColors?: string[]
 ) => {
-  const baseColors = {
-    light: {
-      background: '#ffffff',
-      border: '#e2e8f0',
-      text: '#0f172a',
-      placeholder: '#94a3b8',
-      shadow: '#000000',
-    },
-    dark: {
-      background: '#1e293b',
-      border: '#334155',
-      text: '#f8fafc',
-      placeholder: '#64748b',
-      shadow: '#000000',
-    },
-  };
-
-  const colors = isDark ? baseColors.dark : baseColors.light;
-
   switch (variant) {
     case 'outlined':
       return {
-        backgroundColor: 'transparent',
-        borderColor: colors.border,
+        backgroundColor: themeColors.dropdownOutlined,
+        borderColor: themeColors.dropdownOutlinedBorder,
         borderWidth: 2,
         shadowOpacity: 0,
         elevation: 0,
@@ -109,10 +89,10 @@ export const getVariantStyles = (
 
     case 'filled':
       return {
-        backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+        backgroundColor: themeColors.dropdownFilled,
         borderColor: 'transparent',
         borderWidth: 0,
-        shadowColor: colors.shadow,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
@@ -121,7 +101,7 @@ export const getVariantStyles = (
 
     case 'ghost':
       return {
-        backgroundColor: 'transparent',
+        backgroundColor: themeColors.dropdownGhost,
         borderColor: 'transparent',
         borderWidth: 0,
         shadowOpacity: 0,
@@ -133,21 +113,24 @@ export const getVariantStyles = (
         backgroundColor: 'transparent',
         borderColor: 'transparent',
         borderWidth: 0,
-        shadowColor: colors.shadow,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
         elevation: 6,
         // Gradient will be handled by LinearGradient component
-        gradientColors: gradientColors || [primaryColor, `${primaryColor}80`],
+        gradientColors: gradientColors || [
+          themeColors.dropdownGradientStart,
+          themeColors.dropdownGradientEnd
+        ],
       };
 
     default: // 'default'
       return {
-        backgroundColor: colors.background,
-        borderColor: colors.border,
+        backgroundColor: themeColors.dropdownDefault,
+        borderColor: themeColors.dropdownDefaultBorder,
         borderWidth: 1,
-        shadowColor: colors.shadow,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 12,

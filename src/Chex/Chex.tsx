@@ -78,9 +78,9 @@ export const Chex: React.FC<ChexProps> = ({
   const isDark = mode === 'dark';
 
   // Resolve colors with theme fallbacks
-  const resolvedPrimaryColor = primaryColor || theme.colors.primary;
-  const resolvedSecondaryColor = secondaryColor || (isDark ? '#1f2937' : '#fff');
-  const labelColor = isDark ? '#e5e7eb' : '#333';
+  const resolvedPrimaryColor = primaryColor || theme.colors.checkboxPrimary;
+  const resolvedSecondaryColor = secondaryColor || theme.colors.checkboxSecondary;
+  const labelColor = theme.colors.text as string;
 
   // Animation values
   const checkAnim = useRef(new Animated.Value(checked ? 1 : 0)).current;

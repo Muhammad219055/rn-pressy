@@ -1,6 +1,7 @@
 import type { PressyProps } from '../Pressy/types';
 import type { ReactNode } from 'react';
 import type { StyleProp, ViewStyle, TextStyle, ImageStyle } from 'react-native';
+import type { LiquidGlassEffect, LiquidGlassColorScheme } from '../LiquidGlass';
 
 export interface DDownOption {
   label: string;
@@ -554,4 +555,43 @@ export interface DDownProps extends Omit<PressyProps, 'children' | 'onPress' | '
    * Test ID for testing
    */
   testID?: string;
+
+  // ============================================================================
+  // LIQUID GLASS PROPS (iOS 26+)
+  // ============================================================================
+
+  /**
+   * Enable iOS 26+ liquid glass effect on dropdown panel
+   * Falls back to regular styling on unsupported platforms
+   * Requires @callstack/liquid-glass to be installed
+   * @default false
+   */
+  liquidGlass?: boolean;
+
+  /**
+   * Make the glass view respond to touch interactions
+   * Interactive views grow on touch and show a shimmer effect
+   * @default false
+   */
+  liquidGlassInteractive?: boolean;
+
+  /**
+   * The liquid glass effect variant
+   * - 'clear' - More transparent glass effect
+   * - 'regular' - Standard glass blur effect
+   * - 'none' - No glass effect (transparent view)
+   * @default 'regular'
+   */
+  liquidGlassEffect?: LiquidGlassEffect;
+
+  /**
+   * Tint color applied to the glass effect
+   */
+  liquidGlassTintColor?: string;
+
+  /**
+   * Color scheme adaptation for the glass effect
+   * @default 'system'
+   */
+  liquidGlassColorScheme?: LiquidGlassColorScheme;
 }

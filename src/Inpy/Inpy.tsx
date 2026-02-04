@@ -91,8 +91,7 @@ export const Inpy: React.FC<InpyProps> = ({
   testID,
   ...textInputProps
 }) => {
-  const { theme, mode } = usePressyTheme();
-  const isDark = mode === 'dark';
+  const { theme } = usePressyTheme();
 
   const [isFocused, setIsFocused] = useState(false);
   // Using any to avoid version-specific RN type issues
@@ -103,20 +102,20 @@ export const Inpy: React.FC<InpyProps> = ({
   const labelAnim = useRef(new Animated.Value(value ? 1 : 0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  // Resolved colors
-  const resolvedFocusColor = focusColor || (theme.colors.primary as string);
-  const resolvedErrorColor = errorColor || (theme.colors.error as string) || '#ef4444';
-  const resolvedSuccessColor = successColor || (theme.colors.success as string) || '#22c55e';
-  const resolvedBorderColor = borderColor || (isDark ? '#374151' : '#d1d5db');
+  // Resolved colors from theme
+  const resolvedFocusColor = focusColor || theme.colors.inputFocus;
+  const resolvedErrorColor = errorColor || theme.colors.error;
+  const resolvedSuccessColor = successColor || theme.colors.success;
+  const resolvedBorderColor = borderColor || theme.colors.inputBorder;
   const resolvedBgColor = backgroundColor || (
     variant === 'filled' 
-      ? (isDark ? '#1f2937' : '#f3f4f6')
+      ? theme.colors.inputBackground
       : variant === 'ghost'
         ? 'transparent'
-        : (isDark ? '#111827' : '#ffffff')
+        : theme.colors.inputBackground
   );
-  const resolvedTextColor = textColor || (isDark ? '#f9fafb' : '#111827');
-  const resolvedPlaceholderColor = placeholderColor || (isDark ? '#6b7280' : '#9ca3af');
+  const resolvedTextColor = textColor || theme.colors.inputText;
+  const resolvedPlaceholderColor = placeholderColor || theme.colors.inputPlaceholder;
 
   const sizeConfig = SIZE_CONFIG[size];
   const shapeConfig = SHAPE_CONFIG[shape];

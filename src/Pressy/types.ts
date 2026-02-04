@@ -234,6 +234,27 @@ export interface PressyProps extends Omit<PressableProps, 'style'> {
    */
   swipeThreshold?: number;
 
+  /**
+   * Success message shown when swipe completes.
+   * @default 'Success!'
+   */
+  swipeSuccessText?: string;
+
+  /**
+   * Delay before resetting the swipe state (in ms).
+   * Set to 0 to keep completed state until manually reset.
+   * @default 1500
+   */
+  swipeResetDelay?: number;
+
+  /**
+   * Swipe animation variant.
+   * - 'default': Success message pops up after swipe completes
+   * - 'reveal': Success message is revealed progressively as you swipe
+   * @default 'default'
+   */
+  swipeVariant?: 'default' | 'reveal';
+
   // ==========================================================================
   // Reveal-to-Press
   // ==========================================================================
@@ -354,6 +375,48 @@ export interface PressyProps extends Omit<PressableProps, 'style'> {
    * @default 1500
    */
   glowSpeed?: number;
+
+  // ==========================================================================
+  // Liquid Glass Effect (iOS only)
+  // ==========================================================================
+
+  /**
+   * Enable iOS liquid glass effect (iOS 18+ only).
+   * Falls back to regular button on unsupported platforms.
+   * @default false
+   * @platform ios
+   */
+  liquidGlass?: boolean;
+
+  /**
+   * Liquid glass effect variant.
+   * - 'clear': More transparent glass effect
+   * - 'regular': Standard glass blur effect
+   * - 'none': No glass effect
+   * @default 'regular'
+   * @platform ios
+   */
+  liquidGlassEffect?: 'clear' | 'regular' | 'none';
+
+  /**
+   * Overlay color tint for the liquid glass effect.
+   * @platform ios
+   */
+  liquidGlassTintColor?: string;
+
+  /**
+   * Color scheme for liquid glass effect.
+   * @default 'system'
+   * @platform ios
+   */
+  liquidGlassColorScheme?: 'light' | 'dark' | 'system';
+
+  /**
+   * Enable touch interaction effects for liquid glass.
+   * @default false
+   * @platform ios
+   */
+  liquidGlassInteractive?: boolean;
 
   // ==========================================================================
   // Styling

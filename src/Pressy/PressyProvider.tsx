@@ -3,10 +3,16 @@ import { useColorScheme } from 'react-native';
 import {
   lightTheme,
   darkTheme,
+  extendTheme,
+  getThemeColor,
+  createVariant,
   type PressyTheme,
   type PressyColors,
   type ThemeMode,
 } from './theme';
+
+// Re-export theme utilities for convenience
+export { extendTheme, getThemeColor, createVariant };
 
 // ============================================================================
 // Context

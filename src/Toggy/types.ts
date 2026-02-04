@@ -1,4 +1,5 @@
 import type { ViewStyle, ColorValue } from 'react-native';
+import type { LiquidGlassEffect, LiquidGlassColorScheme } from '../LiquidGlass';
 
 export type ToggyVariant = 
   | 'classic'       // iOS-like
@@ -65,4 +66,43 @@ export interface ToggyProps {
    * Custom container style
    */
   style?: ViewStyle;
+
+  // ============================================================================
+  // LIQUID GLASS PROPS (iOS 26+)
+  // ============================================================================
+
+  /**
+   * Enable iOS 26+ liquid glass effect
+   * Falls back to regular styling on unsupported platforms
+   * Requires @callstack/liquid-glass to be installed
+   * @default false
+   */
+  liquidGlass?: boolean;
+
+  /**
+   * Make the glass view respond to touch interactions
+   * Interactive views grow on touch and show a shimmer effect
+   * @default false
+   */
+  liquidGlassInteractive?: boolean;
+
+  /**
+   * The liquid glass effect variant
+   * - 'clear' - More transparent glass effect
+   * - 'regular' - Standard glass blur effect
+   * - 'none' - No glass effect (transparent view)
+   * @default 'regular'
+   */
+  liquidGlassEffect?: LiquidGlassEffect;
+
+  /**
+   * Tint color applied to the glass effect
+   */
+  liquidGlassTintColor?: ColorValue;
+
+  /**
+   * Color scheme adaptation for the glass effect
+   * @default 'system'
+   */
+  liquidGlassColorScheme?: LiquidGlassColorScheme;
 }

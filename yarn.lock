@@ -1580,6 +1580,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@callstack/liquid-glass@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@callstack/liquid-glass@npm:0.7.0"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/20174a4af732aabbbea29d716dc63cf21e4588279e0fb292bf91e5af4c797358cd8d314c27b2dbf2728dd2548318e3f9dc8cd63fe6ed0206af6874d742977884
+  languageName: node
+  linkType: hard
+
 "@commitlint/cli@npm:^19.8.1":
   version: 19.8.1
   resolution: "@commitlint/cli@npm:19.8.1"
@@ -11193,6 +11203,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "react-native-btn-example@workspace:example"
   dependencies:
+    "@callstack/liquid-glass": "npm:^0.7.0"
     "@expo/metro-runtime": "npm:~6.1.2"
     expo: "npm:~54.0.32"
     expo-status-bar: "npm:~3.0.9"
@@ -11731,6 +11742,9 @@ __metadata:
     react: "*"
     react-native: "*"
     react-native-svg: ">=13.0.0"
+  peerDependenciesMeta:
+    "@callstack/liquid-glass":
+      optional: true
   languageName: unknown
   linkType: soft
 

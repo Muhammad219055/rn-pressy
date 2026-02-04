@@ -85,6 +85,7 @@ import type {
   DDownGroup, 
   DDownRenderProps,
 } from './types';
+import { LiquidGlassWrapper, isLiquidGlassSupported } from '../LiquidGlass';
 
 // ============================================================================
 // Enhanced Animated Dropdown Container
@@ -254,6 +255,14 @@ export const DDown: React.FC<DDownProps> = (props) => {
     accessibilityHint,
     testID,
     title, // Used for dropdown header
+    
+    // Liquid Glass props (iOS 26+)
+    liquidGlass = false,
+    liquidGlassInteractive = false,
+    liquidGlassEffect = 'regular',
+    liquidGlassTintColor,
+    liquidGlassColorScheme = 'system',
+    
     ...pressyProps
   } = props;
 
@@ -263,11 +272,10 @@ export const DDown: React.FC<DDownProps> = (props) => {
   // Get size configuration
   const sizeConfig = sizePresets[size];
   
-  // Get variant styles
+  // Get variant styles using theme colors
   const variantStyles = getVariantStyles(
     variant, 
-    isDark, 
-    theme.colors.primary as string, 
+    theme.colors,
     gradientColors
   );
 
@@ -275,15 +283,13 @@ export const DDown: React.FC<DDownProps> = (props) => {
   // @ts-ignore - Handle indexed access potential undefined even with default prop
   const borderRadius = (shapePresets[shape] ?? shapePresets.rounded)(size);
 
-  // Theme colors with enhanced variants
-  const bgColor = variantStyles.backgroundColor || (isDark ? '#1e293b' : '#ffffff');
-  const textColor = isDark ? '#f8fafc' : '#0f172a';
-  const borderColor = variantStyles.borderColor || (isDark ? '#334155' : '#e2e8f0');
-  const placeholderColor = isDark ? '#64748b' : '#94a3b8';
-  const errorColor = theme.colors.error as string || '#ef4444';
+  const bgColor = variantStyles.backgroundColor || theme.colors.dropdownDefault;
+  const textColor = theme.colors.dropdownDefaultText as string;
+  const borderColor = variantStyles.borderColor || theme.colors.dropdownDefaultBorder;
+  const placeholderColor = theme.colors.textMuted as string;
+  const errorColor = theme.colors.error as string;
   const accentColor = theme.colors.primary as string;
 
-  // Hooks
   const {
     isOpen,
     searchQuery,
@@ -303,7 +309,6 @@ export const DDown: React.FC<DDownProps> = (props) => {
   const { layout, windowDimensions, triggerRef, measureTrigger } = useDropdownLayout();
   const { isKeyboardVisible, keyboardHeight } = useKeyboardVisibility();
 
-  // Process options based on configuration
   const processedOptions = useMemo(() => {
     if (grouped && !('options' in options && options[0])) {
       return groupOptions(flatOptions);
@@ -319,7 +324,6 @@ export const DDown: React.FC<DDownProps> = (props) => {
     onSearchChange
   );
 
-  // Keyboard navigation
   useKeyboardNavigation(
     isOpen,
     filteredOptions,
@@ -330,7 +334,6 @@ export const DDown: React.FC<DDownProps> = (props) => {
     keyboardNavigation
   );
 
-  // Enhanced open/close handlers
   const handleOpen = useCallback(async () => {
     if (disabled || loading) return;
     
@@ -352,7 +355,6 @@ export const DDown: React.FC<DDownProps> = (props) => {
     }
   }, [handleSelect, multiSelect, closeOnSelect, handleClose]);
 
-  // Dropdown positioning with seamless connection to button
   const dropdownPositionStyle = useMemo(() => {
     if (!layout) return { openUpwards: false };
 
@@ -371,25 +373,22 @@ export const DDown: React.FC<DDownProps> = (props) => {
       leftPosition = layout.x - (Math.min(layout.width * 1.5, 300) - layout.width) / 2;
     }
 
-    // Make dropdown extend seamlessly from button with NO gap
     return {
       top: openUpwards ? undefined : layout.y + layout.height,
       bottom: openUpwards ? windowDimensions.height - layout.y : undefined,
       left: Math.max(8, leftPosition),
-      width: layout.width, // Match button width exactly
+      width: layout.width,
       maxHeight,
       minHeight,
-      // NO margins - dropdown should connect directly to button
       marginTop: 0,
       marginBottom: 0,
-      openUpwards, // Include this so we can use it for border radius logic
+      openUpwards, 
     };
   }, [layout, windowDimensions, isKeyboardVisible, keyboardHeight, maxHeight, minHeight, position, alignment]);
 
-  // Extract openUpwards for border radius logic
   const openUpwards = dropdownPositionStyle.openUpwards || false;
 
-  // Render functions
+
   const renderOptionItem = useCallback(({ item, index }: { item: DDownOption; index: number }) => {
     const isSelected = multiSelect
       ? Array.isArray(value) && value.includes(item.value)
@@ -949,13 +948,15 @@ export const DDown: React.FC<DDownProps> = (props) => {
           <AnimatedDropdown
             visible={isOpen}
             duration={animationDuration}
-            glassmorphism={glassmorphism}
-            neumorphism={neumorphism}
+            glassmorphism={glassmorphism && !liquidGlass}
+            neumorphism={neumorphism && !liquidGlass}
             style={[
               styles.dropdown,
               {
-                // Background color from variant
-                backgroundColor: variantStyles.backgroundColor || bgColor,
+                // Background color from variant - transparent when using liquid glass
+                backgroundColor: liquidGlass && isLiquidGlassSupported 
+                  ? 'transparent' 
+                  : (variantStyles.backgroundColor || bgColor),
                 // Border styling - use accentColor for outlined, theme borderColor for default
                 ...(variant === 'outlined' ? {
                   borderColor: accentColor,
@@ -995,9 +996,9 @@ export const DDown: React.FC<DDownProps> = (props) => {
                 // Ensure dropdown is above backdrop but below trigger
                 zIndex: 999,
               },
-              // Special effects override base styles
-              glassmorphism && getGlassmorphismStyles(backdropBlur),
-              neumorphism && getNeumorphismStyles(isDark, size),
+              // Special effects override base styles (disabled when liquidGlass is enabled)
+              !liquidGlass && glassmorphism && getGlassmorphismStyles(backdropBlur),
+              !liquidGlass && neumorphism && getNeumorphismStyles(isDark, size),
               // Gradient handling for dropdown
               variant === 'gradient' && {
                 backgroundColor: 'transparent',
@@ -1006,19 +1007,44 @@ export const DDown: React.FC<DDownProps> = (props) => {
               dropdownStyle,
             ]}
           >
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={{ flex: 1 }}
+            <LiquidGlassWrapper
+              liquidGlass={liquidGlass}
+              interactive={liquidGlassInteractive}
+              effect={liquidGlassEffect}
+              tintColor={liquidGlassTintColor}
+              colorScheme={liquidGlassColorScheme}
+              fallbackBackgroundColor={variantStyles.backgroundColor || bgColor}
+              style={[
+                { flex: 1 },
+                openUpwards
+                  ? {
+                      borderTopLeftRadius: borderRadius,
+                      borderTopRightRadius: borderRadius,
+                      borderBottomLeftRadius: 0,
+                      borderBottomRightRadius: 0,
+                    }
+                  : {
+                      borderTopLeftRadius: 0,
+                      borderTopRightRadius: 0,
+                      borderBottomLeftRadius: borderRadius,
+                      borderBottomRightRadius: borderRadius,
+                    },
+              ]}
             >
-              {renderHeader()}
-              {renderSearchInput()}
-              
-              <View style={{ flex: 1 }}>
-                {renderGroupedContent()}
-              </View>
-              
-              {renderFooter()}
-            </KeyboardAvoidingView>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={{ flex: 1 }}
+              >
+                {renderHeader()}
+                {renderSearchInput()}
+                
+                <View style={{ flex: 1 }}>
+                  {renderGroupedContent()}
+                </View>
+                
+                {renderFooter()}
+              </KeyboardAvoidingView>
+            </LiquidGlassWrapper>
           </AnimatedDropdown>
         )}
       </Modal>

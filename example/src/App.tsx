@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ScrollView,
   View,
+  TextInput
 } from 'react-native';
 import { Pressy, PressyProvider, DDown, Toggy, Chex, Inpy, type PressyRef } from 'rn-pressy';
 import { Image } from 'react-native';
@@ -86,10 +87,11 @@ function ShakeDemo() {
 }
 
 // ============================================================================
-// Interactive Demo
+// Interactive Demo (commented out for now)
 // ============================================================================
 
-import { TextInput } from 'react-native';
+// import { TextInput } from 'react-native';
+
 
 function InteractiveDemo() {
   const [text, setText] = useState('');
@@ -168,10 +170,11 @@ function InteractiveDemo() {
   );
 }
 
+
 function DemoContent() {
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      {/* <InteractiveDemo /> */}
+      <InteractiveDemo />
 
       {/* ================================================================ */}
       {/* VARIANTS */}
@@ -255,19 +258,19 @@ function DemoContent() {
       />
       <Pressy
         title="Small Shadow"
-        shadow="lg"
+        shadow="sm"
         variant="primary"
         onPress={() => {}}
       />
       <Pressy
         title="Medium Shadow"
-        shadow="none"
+        shadow="md"
         variant="primary"
         onPress={() => {}}
       />
       <Pressy
         title="Large Shadow"
-        shadow="none"
+        shadow="lg"
         variant="primary"
         onPress={() => {}}
       />
@@ -338,7 +341,7 @@ function DemoContent() {
         revealToPress
         revealContent={
           <Text style={{ color: '#22c55e', fontWeight: '700' }}>
-            Confirm? Tap Again
+            Sure?
           </Text>
         }
         onReveal={() => console.log('Revealed!')}
@@ -355,6 +358,15 @@ function DemoContent() {
         swipeable
         swipeDirection="right"
         swipeContent={<Text style={{ fontSize: 24 }}>✓</Text>}
+        onSwipeComplete={() => Alert.alert('Swiped! ✅')}
+        style={{ width: '100%' }}
+      />
+      <Pressy
+        swipeVariant="reveal"
+        title="Swipe Right to Confirm →"
+        swipeable
+        swipeDirection="right"
+        swipeContent={<Text style={{ fontSize: 24 }}>hey you did it</Text>}
         onSwipeComplete={() => Alert.alert('Swiped! ✅')}
         style={{ width: '100%' }}
       />
@@ -472,6 +484,53 @@ function DemoContent() {
       <ShakeDemo />
 
       {/* ================================================================ */}
+      {/* LIQUID GLASS (iOS 18+ only) */}
+      {/* ================================================================ */}
+      <Text style={styles.sectionTitle}>Liquid Glass (iOS 18+)</Text>
+
+      {/* Liquid Glass Demo Container with Visual Background */}
+      <View style={styles.liquidGlassContainer}>
+        {/* Colorful background elements */}
+        <View style={styles.liquidGlassBg1} />
+        <View style={styles.liquidGlassBg2} />
+        <View style={styles.liquidGlassBg3} />
+        
+        {/* Glass buttons on top */}
+        <View style={styles.liquidGlassContent}>
+          <Pressy
+            title="Frosted Glass"
+            liquidGlass
+            onPress={() => Alert.alert('Liquid Glass!')}
+            style={{ width: '100%' }}
+          />
+
+          <Pressy
+            title="Clear Glass"
+            liquidGlass
+            liquidGlassEffect="clear"
+            onPress={() => Alert.alert('Clear Glass!')}
+            style={{ width: '100%' }}
+          />
+
+          <Pressy
+            title="Tinted Glass"
+            liquidGlass
+            liquidGlassTintColor="rgba(236, 72, 153, 0.3)"
+            onPress={() => Alert.alert('Tinted Glass!')}
+            style={{ width: '100%' }}
+          />
+
+          <Pressy
+            title="Interactive Glass"
+            liquidGlass
+            liquidGlassInteractive
+            onPress={() => Alert.alert('Interactive Glass!')}
+            style={{ width: '100%' }}
+          />
+        </View>
+      </View>
+
+      {/* ================================================================ */}
       {/* DROPDOWN */}
       {/* ================================================================ */}
       <Text style={styles.sectionTitle}>Dropdowns</Text>
@@ -506,6 +565,43 @@ function DemoContent() {
         style={{ width: '100%' }}
       />
 
+      {/* Liquid Glass Dropdowns */}
+      <View style={[styles.liquidGlassContainer, { minHeight: 180, marginTop: 12 }]}>
+        <View style={[styles.liquidGlassBg1, { width: 150, height: 150 }]} />
+        <View style={[styles.liquidGlassBg2, { width: 130, height: 130 }]} />
+        <View style={[styles.liquidGlassBg3, { width: 100, height: 100, top: 20 }]} />
+        <View style={[styles.liquidGlassContent, { gap: 12 }]}>
+          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>🧊 Liquid Glass Dropdown</Text>
+          <DDown
+            placeholder="Glass Dropdown"
+            options={[
+              { label: 'React Native', value: 'rn', icon: <Text>⚛️</Text> },
+              { label: 'TypeScript', value: 'ts', icon: <Text>📘</Text> },
+              { label: 'Swift', value: 'swift', icon: <Text>🍎</Text> },
+            ]}
+            liquidGlass
+            liquidGlassInteractive
+            liquidGlassEffect="regular"
+            onChange={(val) => console.log('Glass:', val)}
+            style={{ width: '100%' }}
+          />
+          <DDown
+            placeholder="Clear Glass Multi"
+            options={[
+              { label: 'Option A', value: 'a' },
+              { label: 'Option B', value: 'b' },
+              { label: 'Option C', value: 'c' },
+            ]}
+            multiSelect
+            liquidGlass
+            liquidGlassEffect="clear"
+            liquidGlassColorScheme="system"
+            onChange={(vals) => console.log('Multi Glass:', vals)}
+            style={{ width: '100%' }}
+          />
+        </View>
+      </View>
+
       {/* ================================================================ */}
       {/* TOGGLES */}
       {/* ================================================================ */}
@@ -533,6 +629,37 @@ function DemoContent() {
           <Text style={{ color: '#fff', width: 80 }}>Elastic</Text>
           <StatefulToggle value={false} variant="elastic" activeColor="#3b82f6" inactiveColor="#f59e0b"/>
           <StatefulToggle value={true} variant="elastic" activeColor="#3c9865ff" inactiveColor="#c8244aff"/>
+      </View>
+
+      {/* Liquid Glass Toggles */}
+      <View style={[styles.liquidGlassContainer, { minHeight: 120, marginTop: 12 }]}>
+        <View style={[styles.liquidGlassBg1, { width: 100, height: 100 }]} />
+        <View style={[styles.liquidGlassBg2, { width: 120, height: 120 }]} />
+        <View style={[styles.liquidGlassBg3, { width: 120, height: 120 }]} />
+        <View style={[ { width: 120, height: 120 }]} />
+        <View style={[styles.liquidGlassContent, { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', flex: 1 }]}>
+          <View style={{ alignItems: 'center', gap: 8 }}>
+            <Text style={{ color: '#fff', fontSize: 12 }}>Glass Toggle</Text>
+            <StatefulToggle 
+              value={false} 
+              liquidGlass 
+              liquidGlassEffect="regular"
+              activeColor="#3b82f6" 
+              inactiveColor="#64748b"
+            />
+          </View>
+          <View style={{ alignItems: 'center', gap: 8 }}>
+            <Text style={{ color: '#fff', fontSize: 12 }}>Interactive</Text>
+            <StatefulToggle 
+              value={true} 
+              liquidGlass 
+              liquidGlassInteractive
+              liquidGlassEffect="clear"
+              activeColor="#22c55e" 
+              inactiveColor="#64748b"
+            />
+          </View>
+        </View>
       </View>
 
       {/* <View style={styles.row}>
@@ -622,5 +749,50 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     paddingVertical: 8,
+  },
+  // Liquid Glass Background Styles
+  liquidGlassContainer: {
+    width: '100%',
+    minHeight: 400,
+    borderRadius: 20,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: '#1a1a2e',
+  },
+  liquidGlassBg1: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#6366f1',
+    top: 20,
+    left: -50,
+    opacity: 0.8,
+  },
+  liquidGlassBg2: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    backgroundColor: '#ec4899',
+    bottom: -50,
+    right: -60,
+    opacity: 0.7,
+  },
+  liquidGlassBg3: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: '#14b8a6',
+    top: 50,
+    right: 30,
+    opacity: 0.6,
+  },
+  liquidGlassContent: {
+    padding: 20,
+    gap: 16,
+    zIndex: 10,
+    position: 'relative',
   },
 });

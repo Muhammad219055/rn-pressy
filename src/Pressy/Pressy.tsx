@@ -61,6 +61,30 @@ import {
 } from './presets';
 import { lightColors, darkColors } from './theme';
 
+// Liquid Glass imports (iOS only)
+// Using dynamic require to avoid Metro bundler errors when package is not installed
+let LiquidGlassView: any = View;
+let isLiquidGlassSupported = false;
+
+if (Platform.OS === 'ios') {
+  try {
+    // @ts-ignore - Dynamic require for optional dependency
+    const liquidGlass = require('@callstack/liquid-glass');
+    LiquidGlassView = liquidGlass.LiquidGlassView;
+    isLiquidGlassSupported = liquidGlass.isLiquidGlassSupported;
+    
+    if (__DEV__) {
+      console.log('[Pressy] Liquid Glass support:', isLiquidGlassSupported ? 'Available ✅' : 'iOS 18+ required');
+    }
+  } catch (e) {
+    // Liquid glass not installed, will use regular View
+    // This is expected and not an error
+    if (__DEV__) {
+      console.log('[Pressy] Liquid Glass package not installed (optional)');
+    }
+  }
+}
+
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // ============================================================================
@@ -163,6 +187,9 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
     swipeContent,
     onSwipeComplete,
     swipeThreshold = DEFAULTS.swipeThreshold,
+    swipeSuccessText = 'Success!',
+    swipeResetDelay = 1500,
+    swipeVariant = 'default',
 
     // Reveal-to-Press
     revealToPress = false,
@@ -179,6 +206,13 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
     glow = false,
     glowColor,
     glowSpeed = DEFAULTS.glowSpeed,
+
+    // Liquid Glass (iOS)
+    liquidGlass = false,
+    liquidGlassEffect = 'regular',
+    liquidGlassTintColor,
+    liquidGlassColorScheme = 'system',
+    liquidGlassInteractive = false,
 
     // Styling
     style,
@@ -233,6 +267,9 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
   const swipeAnim = useRef(new Animated.Value(0)).current;
+  const swipeThumbOpacity = useRef(new Animated.Value(1)).current;
+  const swipeSuccessOpacity = useRef(new Animated.Value(0)).current;
+  const swipeSuccessScale = useRef(new Animated.Value(0.5)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const glareAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0.3)).current;
@@ -240,6 +277,8 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
   const translateYAnim = useRef(new Animated.Value(-4)).current; // For 3D effect
   // State interpolation: 0 = Idle, 1 = Success, -1 = Error
   const stateAnim = useRef(new Animated.Value(0)).current;
+  // Reveal-to-press crossfade: 0 = normal content, 1 = reveal content
+  const revealAnim = useRef(new Animated.Value(0)).current;
 
   // ==========================================================================
   // State Animation Triggers
@@ -374,6 +413,11 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
 
   // Determine if button should be interactive
   const isDisabled = disabled || isLoading;
+
+  // Determine if liquid glass should be used
+  const shouldUseLiquidGlass = useMemo(() => {
+    return liquidGlass && Platform.OS === 'ios' && isLiquidGlassSupported;
+  }, [liquidGlass]);
 
   // ==========================================================================
   // Imperative Methods (shake)
@@ -637,6 +681,12 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
       if (revealToPress) {
         if (!isRevealed) {
           setIsRevealed(true);
+          // Animate to reveal state
+          Animated.timing(revealAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
           onReveal?.();
 
           if (revealTimeoutRef.current) {
@@ -644,12 +694,26 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
           }
 
           revealTimeoutRef.current = setTimeout(() => {
-            setIsRevealed(false);
+            // Animate back to normal state
+            Animated.timing(revealAnim, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }).start(() => {
+              setIsRevealed(false);
+            });
           }, revealTimeout);
 
           return;
         } else {
-          setIsRevealed(false);
+          // Animate back to normal and confirm
+          Animated.timing(revealAnim, {
+            toValue: 0,
+            duration: 150,
+            useNativeDriver: true,
+          }).start(() => {
+            setIsRevealed(false);
+          });
           if (revealTimeoutRef.current) {
             clearTimeout(revealTimeoutRef.current);
           }
@@ -696,14 +760,21 @@ export const Pressy = forwardRef<PressyRef, PressyProps>((props, ref) => {
   // Swipeable Pan Responder
   // ==========================================================================
 
-const panResponder = useMemo(() => {
+  const panResponder = useMemo(() => {
     if (!swipeable) return null;
+
+    let startX = 0;
 
     return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to horizontal gestures
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
+      },
       onPanResponderGrant: () => {
-
+        // Capture starting position
+        startX = (swipeAnim as any)._value || 0;
+        
         if (vibration && Platform.OS !== 'web') {
           Vibration.vibrate(10);
         }
@@ -714,55 +785,131 @@ const panResponder = useMemo(() => {
         const thumbWidth = sizeConfig.minHeight;
         const maxDrag = Math.max(0, buttonWidth - thumbWidth);
         
-        // Calculate drag with direction
-        let clampedDx = dx * direction;
+        // Calculate new position from start + delta
+        const newPosition = startX + (dx * direction);
         
-        if (clampedDx < 0) {
-          // Resistance when dragging before start
-          clampedDx = clampedDx * 0.2;
-        } else if (clampedDx > maxDrag) {
-          // Resistance when dragging past end
-          const overflow = clampedDx - maxDrag;
-          clampedDx = maxDrag + (overflow * 0.2);
+        // Clamp to valid range with slight rubber band effect at ends
+        let clampedPosition: number;
+        if (newPosition < 0) {
+          // Rubber band at start
+          clampedPosition = newPosition * 0.15;
+        } else if (newPosition > maxDrag) {
+          // Rubber band at end
+          const overflow = newPosition - maxDrag;
+          clampedPosition = maxDrag + (overflow * 0.15);
+        } else {
+          clampedPosition = newPosition;
         }
         
-        swipeAnim.setValue(Math.max(0, clampedDx));
+        swipeAnim.setValue(clampedPosition);
       },
       onPanResponderRelease: (_, gestureState) => {
-        const vx = gestureState.vx; // Velocity for momentum-based threshold
+        const vx = gestureState.vx;
         const direction = swipeDirection === 'right' ? 1 : -1;
         const thumbWidth = sizeConfig.minHeight;
         const maxDrag = Math.max(0, buttonWidth - thumbWidth);
         const currentValue = (swipeAnim as any)._value;
+        
+        // Clamp current value for progress calculation
         const clampedValue = Math.max(0, Math.min(currentValue, maxDrag));
         const progress = maxDrag > 0 ? clampedValue / maxDrag : 0;
 
-        // Consider velocity for more natural feel
-        const hasVelocity = Math.abs(vx) > 0.5;
-        const velocityBoost = hasVelocity && vx * direction > 0 ? 0.15 : 0;
+        // Consider velocity for momentum-based completion
+        const hasStrongVelocity = Math.abs(vx) > 1.0;
+        const velocityMatchesDirection = (vx * direction) > 0;
+        const velocityBoost = hasStrongVelocity && velocityMatchesDirection ? 0.25 : 0;
         const effectiveProgress = Math.min(1, progress + velocityBoost);
 
         if (effectiveProgress >= swipeThreshold) {
-          // Complete the swipe with smooth animation
+          // Complete the swipe - animate to end, then show success
           Animated.spring(swipeAnim, {
             toValue: maxDrag,
             useNativeDriver: true,
-            tension: 80,
-            friction: 10,
+            tension: 120,
+            friction: 12,
           }).start(() => {
             _setIsSwipeComplete(true);
             triggerHaptic();
             onSwipeComplete?.();
+
+            // Animated success sequence:
+            // 1. Fade out thumb
+            // 2. Show success text with scale-in
+            // 3. After delay, fade out success and reset
+            Animated.parallel([
+              Animated.timing(swipeThumbOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.sequence([
+                Animated.delay(100), // Slight delay before showing success
+                Animated.parallel([
+                  Animated.timing(swipeSuccessOpacity, {
+                    toValue: 1,
+                    duration: 250,
+                    useNativeDriver: true,
+                  }),
+                  Animated.spring(swipeSuccessScale, {
+                    toValue: 1,
+                    useNativeDriver: true,
+                    tension: 150,
+                    friction: 10,
+                  }),
+                ]),
+              ]),
+            ]).start(() => {
+              // If reset delay is > 0, auto-reset after delay
+              if (swipeResetDelay > 0) {
+                setTimeout(() => {
+                  // Fade out success and reset everything
+                  Animated.parallel([
+                    Animated.timing(swipeSuccessOpacity, {
+                      toValue: 0,
+                      duration: 300,
+                      useNativeDriver: true,
+                    }),
+                    Animated.timing(swipeSuccessScale, {
+                      toValue: 0.5,
+                      duration: 300,
+                      useNativeDriver: true,
+                    }),
+                  ]).start(() => {
+                    // Reset thumb to start from left (off-screen)
+                    swipeAnim.setValue(-30);
+                    swipeThumbOpacity.setValue(1);
+                    _setIsSwipeComplete(false);
+                    
+                    // Animate thumb sliding in from left
+                    Animated.spring(swipeAnim, {
+                      toValue: 0,
+                      useNativeDriver: true,
+                      tension: 120,
+                      friction: 10,
+                    }).start();
+                  });
+                }, swipeResetDelay);
+              }
+            });
           });
         } else {
-          // Snap back with elastic bounce
+          // Snap back to start with a quick, smooth animation
           Animated.spring(swipeAnim, {
             toValue: 0,
             useNativeDriver: true,
-            tension: 100,
-            friction: 8,
+            tension: 180,  // Higher tension = faster snap back
+            friction: 14,  // Higher friction = less bouncing
           }).start();
         }
+      },
+      onPanResponderTerminate: () => {
+        // If gesture is interrupted, animate back smoothly
+        Animated.spring(swipeAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 180,
+          friction: 14,
+        }).start();
       },
     });
   }, [
@@ -846,43 +993,58 @@ const panResponder = useMemo(() => {
     );
   }, [isLoading, loader, presetStyles.text.color]);
 
-  // Fixed: Reveal content maintains button structure
+  // Fixed: Reveal content maintains button structure with animated crossfade
   const mainContent = useMemo(() => {
     if (isLoading) return renderLoader;
 
-    // For reveal-to-press, show reveal content but maintain size
-    if (revealToPress && isRevealed) {
-      return (
-        <View style={styles.revealContentWrapper}>
-          {revealContent ?? (
-            <Text style={[presetStyles.text, { fontWeight: '700' }]}>
-              Confirm?
-            </Text>
-          )}
-        </View>
-      );
-    }
-
-    if (iconPosition === 'right') {
-      return (
-        <>
-          {renderContent}
-          {renderIcon}
-        </>
-      );
-    }
-
-    return (
+    const normalContent = iconPosition === 'right' ? (
+      <>
+        {renderContent}
+        {renderIcon}
+      </>
+    ) : (
       <>
         {renderIcon}
         {renderContent}
       </>
     );
+
+    // For reveal-to-press, render both layers stacked with crossfade
+    if (revealToPress) {
+      // Calculate animated opacities for crossfade
+      const normalOpacity = revealAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 0],
+      });
+      const revealOpacity = revealAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+      });
+
+      return (
+        <View style={styles.revealStackContainer}>
+          {/* Normal content layer */}
+          <Animated.View style={[styles.revealLayer, { opacity: normalOpacity }]}>
+            {normalContent}
+          </Animated.View>
+          {/* Reveal content layer (positioned on top) */}
+          <Animated.View style={[styles.revealLayer, styles.revealLayerAbsolute, { opacity: revealOpacity }]}>
+            {revealContent ?? (
+              <Text style={[presetStyles.text, { fontWeight: '700' }]}>
+                Confirm? Tap Again
+              </Text>
+            )}
+          </Animated.View>
+        </View>
+      );
+    }
+
+    return normalContent;
   }, [
     isLoading,
     renderLoader,
     revealToPress,
-    isRevealed,
+    revealAnim,
     revealContent,
     presetStyles.text,
     iconPosition,
@@ -989,6 +1151,22 @@ const panResponder = useMemo(() => {
       : undefined;
 
     const thumbWidth = sizeConfig.minHeight; // Thumb is square based on height
+    const maxDrag = Math.max(0, buttonWidth - thumbWidth);
+
+    // For reveal variant: translate the success layer from left (-buttonWidth) to 0
+    // as the thumb moves, revealing the success message underneath
+    const revealTranslateX = swipeAnim.interpolate({
+      inputRange: [0, maxDrag || 1],
+      outputRange: [-buttonWidth, 0],
+      extrapolate: 'clamp',
+    });
+
+    // Fade out placeholder text as we reveal
+    const placeholderOpacity = swipeAnim.interpolate({
+      inputRange: [0, maxDrag * 0.3 || 1, maxDrag * 0.7 || 1],
+      outputRange: [1, 0.5, 0],
+      extrapolate: 'clamp',
+    });
 
     return (
       <View
@@ -1001,26 +1179,71 @@ const panResponder = useMemo(() => {
         ]}
         onLayout={handleLayout}
       >
-        {/* Track Content (Text "Swipe to Confirm") */}
-        <View style={styles.swipeTrackTextWrapper}>
-          <Text style={[presetStyles.text, { fontWeight: '700', opacity: 0.8 }, textStyle]}>
+        {/* Track Content (Placeholder Text - fades on reveal variant) */}
+        <Animated.View style={[
+          styles.swipeTrackTextWrapper, 
+          swipeVariant === 'reveal' && { opacity: placeholderOpacity, zIndex: 1 }
+        ]}>
+          <Text style={[presetStyles.text, { fontWeight: '700', opacity: swipeVariant === 'reveal' ? 1 : 0.8 }, textStyle]}>
             {title}
           </Text>
-        </View>
+        </Animated.View>
 
-        {/* Success / Background Reveal Layer (Optional, e.g. Green reveal) */}
-        <Animated.View 
+        {/* Reveal Variant: Success layer that slides in from left */}
+        {swipeVariant === 'reveal' && (
+          <Animated.View
             style={[
-                styles.swipeBackground, 
-                { 
-                    backgroundColor: '#22c55e', 
-                    opacity: swipeAnim.interpolate({
-                        inputRange: [0, Math.max(1, buttonWidth - thumbWidth)],
-                        outputRange: [0, 1]
-                    })
-                }
+              StyleSheet.absoluteFill,
+              styles.swipeRevealContent,
+              {
+                borderRadius: presetStyles.container.borderRadius ?? 12,
+                transform: [{ translateX: revealTranslateX }],
+                zIndex: 0,
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <Text style={[presetStyles.text, styles.swipeSuccessText]}>
+              {swipeContent ?? swipeSuccessText}
+            </Text>
+          </Animated.View>
+        )}
+
+        {/* Default Variant: Background reveal layer with opacity fade */}
+        {swipeVariant === 'default' && (
+          <Animated.View 
+            style={[
+              styles.swipeBackground, 
+              { 
+                backgroundColor: '#22c55e', 
+                opacity: swipeAnim.interpolate({
+                  inputRange: [0, maxDrag || 1],
+                  outputRange: [0, 1],
+                  extrapolate: 'clamp',
+                })
+              }
             ]} 
-        />
+          />
+        )}
+
+        {/* Default Variant: Success Message Overlay (pops up after complete) */}
+        {swipeVariant === 'default' && (
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              styles.swipeSuccessOverlay,
+              {
+                opacity: swipeSuccessOpacity,
+                transform: [{ scale: swipeSuccessScale }],
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <Text style={[presetStyles.text, styles.swipeSuccessText]}>
+              {swipeContent ?? swipeSuccessText}
+            </Text>
+          </Animated.View>
+        )}
 
         {/* Thumb / Handle */}
         <Animated.View
@@ -1028,9 +1251,10 @@ const panResponder = useMemo(() => {
             styles.swipeThumb,
             {
               width: thumbWidth,
-              height: '100%', // Full height of container
-              backgroundColor: resolvedColors.primary, // Thumb color
+              height: '100%',
+              backgroundColor: resolvedColors.primary,
               borderRadius: presetStyles.container.borderRadius ?? 12,
+              opacity: swipeThumbOpacity,
               transform: [
                 { translateX: Animated.multiply(swipeAnim, direction) },
               ],
@@ -1038,7 +1262,7 @@ const panResponder = useMemo(() => {
           ]}
           {...panResponder?.panHandlers}
         >
-            {/* Optional Icon in Thumb (like an arrow) */}
+            {/* Icon in Thumb (arrow) */}
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: resolvedColors.primaryText, fontSize: 18, fontWeight: 'bold' }}>
                     {direction === 1 ? '→' : '←'}
@@ -1085,6 +1309,20 @@ const panResponder = useMemo(() => {
     />
   ) : null;
 
+  // ==========================================================================
+  // Liquid Glass Wrapper (iOS only)
+  // ==========================================================================
+
+  const ButtonWrapper = shouldUseLiquidGlass ? LiquidGlassView : View;
+  const liquidGlassProps = shouldUseLiquidGlass
+    ? {
+        interactive: liquidGlassInteractive,
+        effect: liquidGlassEffect,
+        tintColor: liquidGlassTintColor,
+        colorScheme: liquidGlassColorScheme,
+      }
+    : {};
+
   return (
     <Animated.View
       style={[
@@ -1094,36 +1332,41 @@ const panResponder = useMemo(() => {
       ]}
     >
       {render3DLayers}
-      <AnimatedPressable
-        onPress={handlePress}
-        onLongPress={onLongPress ? handleLongPress : undefined}
-        delayLongPress={delayLongPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={isDisabled}
-        onLayout={handleLayout}
-        style={[
-          styles.container,
-          presetStyles.container,
-          {
-            transform: [
-              { scale: combinedScale },
-              { translateX: shakeAnim },
-              ...(is3D ? [{ translateY: translateYAnim }] : []),
-            ],
-            opacity: isDisabled
-              ? disabledOpacity
-              : (opacityAnim as unknown as number),
-          },
-          configStyle, // Apply config styles after transforms
-          style, // Apply custom styles last
-        ]}
-        {...restProps}
-      >
-        {backgroundLayer}
-        {mainContent}
-        {glareOverlay}
-      </AnimatedPressable>
+      <ButtonWrapper {...liquidGlassProps}>
+        <AnimatedPressable
+          onPress={handlePress}
+          onLongPress={onLongPress ? handleLongPress : undefined}
+          delayLongPress={delayLongPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          disabled={isDisabled}
+          onLayout={handleLayout}
+          style={[
+            styles.container,
+            presetStyles.container,
+            {
+              transform: [
+                { scale: combinedScale },
+                { translateX: shakeAnim },
+                ...(is3D ? [{ translateY: translateYAnim }] : []),
+              ],
+              opacity: isDisabled
+                ? disabledOpacity
+                : (opacityAnim as unknown as number),
+            },
+            shouldUseLiquidGlass && {
+              backgroundColor: 'transparent', // Let liquid glass handle background
+            },
+            configStyle, // Apply config styles after transforms
+            style, // Apply custom styles last
+          ]}
+          {...restProps}
+        >
+          {!shouldUseLiquidGlass && backgroundLayer}
+          {mainContent}
+          {glareOverlay}
+        </AnimatedPressable>
+      </ButtonWrapper>
     </Animated.View>
   );
 });
@@ -1151,6 +1394,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  revealStackContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  revealLayer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  revealLayerAbsolute: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
   swipeContainer: {
     overflow: 'hidden',
     position: 'relative',
@@ -1164,6 +1425,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 0,
+  },
+  swipeRevealMask: {
+    overflow: 'hidden',
+    zIndex: 1,
+  },
+  swipeRevealContent: {
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#22c55e',
+  },
+  swipeSuccessOverlay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 3,
+    backgroundColor: '#22c55e',
+    borderRadius: 12,
+  },
+  swipeSuccessText: {
+    fontWeight: '700',
+    fontSize: 16,
   },
   swipeThumb: {
     position: 'absolute',

@@ -262,6 +262,44 @@ export const DDownExamples: React.FC = () => {
         />
       </View>
 
+      {/* Liquid Glass (iOS 26+) */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>🧊 Liquid Glass (iOS 26+)</Text>
+        <Text style={styles.description}>
+          Native iOS 26 liquid glass effect with interactive shimmer.{'\n'}
+          Falls back gracefully on unsupported platforms.
+        </Text>
+        <DDown
+          options={frameworkOptions}
+          value={basicValue}
+          onChange={handleBasicChange}
+          placeholder="Select with liquid glass"
+          liquidGlass
+          liquidGlassInteractive
+          liquidGlassEffect="regular"
+          size="lg"
+          shape="rounded"
+          title="Native Liquid Glass"
+          searchable
+        />
+        
+        <View style={{ height: 16 }} />
+        
+        <DDown
+          options={basicOptions}
+          value={multiValue}
+          onChange={handleMultiChange}
+          placeholder="Clear glass effect"
+          multiSelect
+          liquidGlass
+          liquidGlassEffect="clear"
+          liquidGlassColorScheme="system"
+          size="md"
+          shape="pill"
+          title="Clear Glass Multi-Select"
+        />
+      </View>
+
       {/* Gradient Variant */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🌈 Gradient Variant</Text>

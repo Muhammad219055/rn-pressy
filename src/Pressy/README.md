@@ -70,6 +70,7 @@ It scales. It pulses. It literally shakes when you mess up (like your hands afte
 - **Glow** - Radioactive vibes (glowing like you after a good time)
 - **Shake** - Error wiggle of shame (the walk of shame, but for buttons)
 - **Custom Scale** - Make it bounce however you want (size adjustable, performance guaranteed)
+- **Liquid Glass** - iOS 18+ frosted glass effect (premium vibes only, Android users cry in the corner) 🧊
 
 ### 🎨 **Theming** (The Aesthetic)
 
@@ -99,7 +100,7 @@ Congrats, you made a button. Your parents are so proud. 🎉
 
 <!-- Add variants image here -->
 
-![Variants](./assets/variants.png)
+![Variants](../../assets/variants.png)
 
 ```tsx
 <Pressy title="Primary" variant="primary" onPress={() => {}} />
@@ -114,7 +115,7 @@ Congrats, you made a button. Your parents are so proud. 🎉
 
 <!-- Add sizes image here -->
 
-![Sizes](./assets/sizes.png)
+![Sizes](../../assets/sizes.png)
 
 ```tsx
 <Pressy title="Small" size="sm" onPress={() => {}} />
@@ -127,7 +128,7 @@ Congrats, you made a button. Your parents are so proud. 🎉
 
 <!-- Add shapes image here -->
 
-![Shapes](./assets/shapes.png)
+![Shapes](../../assets/shapes.png)
 
 ```tsx
 <Pressy title="Rounded" shape="rounded" onPress={() => {}} />
@@ -148,7 +149,7 @@ Congrats, you made a button. Your parents are so proud. 🎉
 
 <!-- Add shadows image here -->
 
-![Shadows](./assets/shadows.png)
+![Shadows](../../assets/shadows.png)
 
 ```tsx
 <Pressy title="No Shadow" shadow="none" onPress={() => {}} />
@@ -161,7 +162,7 @@ Congrats, you made a button. Your parents are so proud. 🎉
 
 <!-- Add icons image here -->
 
-![Icons](./assets/icons.png)
+![Icons](../../assets/icons.png)
 
 ```tsx
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -190,7 +191,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 <!-- Add loading image here -->
 
-![Loading](./assets/loading.gif)
+![Loading](../../assets/loading.gif)
 
 ```tsx
 <Pressy
@@ -212,7 +213,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 <!-- Add states image here -->
 
-![States](./assets/states.gif)
+![States](../../assets/state.gif)
 
 ```tsx
 const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -287,7 +288,7 @@ const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
 <!-- Add swipeable gif here -->
 
-![Swipeable](./assets/swipeable.gif)
+![Swipeable](../../assets/swipe.gif)
 
 ```tsx
 <Pressy
@@ -305,7 +306,7 @@ const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
 <!-- Add reveal gif here -->
 
-![Reveal](./assets/reveal.gif)
+![Reveal](../../assets/reveal.gif)
 
 ```tsx
 <Pressy
@@ -329,7 +330,7 @@ const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
 <!-- Add effects gif here -->
 
-![Effects](./assets/effects.gif)
+![Effects](../../assets/effects.gif)
 
 ```tsx
 // Pulse Effect (Anxiety Mode)
@@ -431,6 +432,74 @@ const buttonRef = useRef<PressyRef>(null);
   // Extra faded, like your will to live
 />
 ```
+
+### Liquid Glass Effect (iOS 26+ Only) 🧊
+
+**The Premium Flex** - That frosted glass effect Apple loves so much. iOS 26+ exclusive because Android can't have nice things.
+
+```tsx
+// Basic liquid glass
+<Pressy
+  title="Frosted Vibes"
+  liquidGlass
+  onPress={() => {}}
+  // Requires @callstack/liquid-glass package
+/>
+
+// Clear glass effect (more transparent)
+<Pressy
+  title="Crystal Clear"
+  liquidGlass
+  liquidGlassEffect="clear"
+  onPress={() => {}}
+  // See-through like your ex's lies
+/>
+
+// With tint color
+<Pressy
+  title="Tinted Glass"
+  liquidGlass
+  liquidGlassTintColor="rgba(236, 72, 153, 0.3)"
+  onPress={() => {}}
+  // Pink tinted glass, fancy af
+/>
+
+// Interactive glass (responds to touch)
+<Pressy
+  title="Touch Me"
+  liquidGlass
+  liquidGlassInteractive
+  onPress={() => {}}
+  // Grows and shimmers on touch
+/>
+```
+
+**Installation for Liquid Glass:**
+
+```bash
+# Install the optional dependency
+npm install @callstack/liquid-glass
+# or
+yarn add @callstack/liquid-glass
+
+# iOS only - run pod install
+cd ios && pod install
+```
+
+**Requirements:**
+
+- iOS 18+ (older versions fall back to regular button)
+- Xcode 16+
+- React Native 0.80+
+- Not supported in Expo Go (use dev builds)
+
+**Props:**
+
+- `liquidGlass` - Enable the effect (boolean)
+- `liquidGlassEffect` - 'clear' | 'regular' | 'none' (default: 'regular')
+- `liquidGlassTintColor` - Color overlay (string)
+- `liquidGlassColorScheme` - 'light' | 'dark' | 'system' (default: 'system')
+- `liquidGlassInteractive` - Touch effects (boolean)
 
 ---
 
